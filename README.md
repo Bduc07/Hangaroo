@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Event Management Mobile App - Complete Project Artifacts
 
 ## 1. Project Charter
@@ -73,3 +74,6 @@ A mobile app that connects event hosts with participants through real-time featu
 | Storage            | AWS S3 / Cloudinary      |
 
 ### System Architecture
+=======
+# Hangaroo
+>>>>>>> 181c3eb7e48ac84f7c15484db1cedf208d23809b

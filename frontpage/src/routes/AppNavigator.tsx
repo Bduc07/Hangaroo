@@ -5,7 +5,7 @@ import type { RootStackParamList } from './types';
 import Login from '../pages/Login';
 import SignUp from '../pages/SignUp';
 import DrawerNavigator from './DrawerNavigator';
-import EventDetails from '../pages/EventDetails'; // ✅ Add your EventDetails screen
+import EventDetails from '../pages/EventDetails';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -20,7 +20,7 @@ const AppNavigator = () => {
     checkLogin();
   }, []);
 
-  if (isLoggedIn === null) return null; // optional: splash screen
+  if (isLoggedIn === null) return null; // Optional splash screen
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

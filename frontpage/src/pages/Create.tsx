@@ -1,24 +1,112 @@
+import React, { useState } from 'react';
 import {
-  StyleSheet,
+  ScrollView,
   Text,
   View,
-  ScrollView,
-  Image,
   Pressable,
+  Image,
+  TextInput,
+  Alert,
+  StyleSheet,
 } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../routes/types';
+import { launchImageLibrary } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import React from 'react';
-type CreateNavProp = NativeStackNavigationProp<RootStackParamList, 'Create'>;
+type CreateNavProp = NativeStackNavigationProp<RootStackParamList, 'MainApp'>;
+
+const categoryMapping: Record<string, string> = {
+  Sports: 'Sports',
+  Social: 'Festivals',
+  Education: 'Workshop',
+  Business: 'Business',
+  Other: 'Other',
+};
+
 const Create = () => {
   const navigation = useNavigation<CreateNavProp>();
+
+  const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
+  const [title, setTitle] = useState('');
+  const [location, setLocation] = useState('');
+  const [description, setDescription] = useState('');
+  const [maxParticipants, setMaxParticipants] = useState('');
+  const [category, setCategory] = useState('Sports');
+  const [price, setPrice] = useState('0');
+  const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
+
+  const pickImage = () => {
+    launchImageLibrary({ mediaType: 'photo', quality: 1 }, response => {
+      if (response.didCancel) return;
+      if (response.errorCode) {
+        Alert.alert('Error', response.errorMessage || 'Image picker error');
+        return;
+      }
+      if (response.assets && response.assets.length > 0) {
+        setCoverPhoto(response.assets[0].uri || null);
+      }
+    });
+  };
+
+  const publishEvent = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Error', 'Please login again');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('location', location);
+      formData.append('maxParticipants', maxParticipants);
+      formData.append('startTime', new Date().toISOString());
+      formData.append('endTime', new Date().toISOString());
+      formData.append('category', categoryMapping[category] || 'Other');
+      formData.append('price', price);
+      formData.append('paymentMethod', paymentMethod);
+
+      if (coverPhoto) {
+        formData.append('coverPhoto', {
+          uri: coverPhoto,
+          type: 'image/jpeg',
+          name: 'event.jpg',
+        } as any);
+      }
+
+      const response = await fetch('http://10.0.2.2:3000/api/v1/events', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        Alert.alert('Error', data.error || 'Failed to create event');
+        return;
+      }
+
+      Alert.alert('Success', 'Event created successfully');
+      navigation.navigate('Dashboard'); // ✅ Jump to dashboard
+    } catch (err) {
+      console.error('Publish Event Error:', err);
+      Alert.alert('Error', 'Something went wrong');
+    }
+  };
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 40 }}
     >
+      {/* Back button */}
       <Pressable
         style={styles.backButton}
         onPress={() => navigation.navigate('Dashboard')}
@@ -29,94 +117,116 @@ const Create = () => {
         />
       </Pressable>
 
-      {/* Header */}
       <Text style={styles.EventText}>New Event</Text>
 
-      {/* Cover Photo Box */}
-      <View style={styles.photo}>
-        <Text style={styles.editPhotoText}>Edit Cover Photo</Text>
-      </View>
+      <Pressable style={styles.photo} onPress={pickImage}>
+        {coverPhoto ? (
+          <Image source={{ uri: coverPhoto }} style={styles.coverImage} />
+        ) : (
+          <Text style={styles.editPhotoText}>Edit Cover Photo</Text>
+        )}
+      </Pressable>
 
-      {/* Event Name */}
+      {/* Inputs */}
       <Text style={styles.Title}>Event Name</Text>
-      <View style={styles.Box1} />
-
-      {/* Location */}
-      <Text style={styles.location}>Location</Text>
-      <View style={styles.Box2} />
-
-      <Text style={styles.location}>Description</Text>
-      <View style={styles.Box3} />
-      <Text style={styles.location}>Maximum Participants</Text>
-      <View style={styles.Box3} />
-
-      {/* Date & Time */}
-      <Text style={styles.Time}>Date & Time</Text>
-      <View style={styles.startBox}>
-        <Text style={styles.startText}>Starts Today, 8:00</Text>
-      </View>
-      <View style={styles.endBox}>
-        <Text style={styles.endText}>Ends Today, 11:00</Text>
+      <View style={styles.Box}>
+        <TextInput
+          placeholder="Enter event name"
+          placeholderTextColor="#888"
+          value={title}
+          onChangeText={setTitle}
+          style={{ color: 'white', padding: 15, fontSize: 18 }}
+        />
       </View>
 
-      {/* Category */}
-      <Text style={styles.category}>Category</Text>
+      <Text style={styles.Title}>Location</Text>
+      <View style={styles.Box}>
+        <TextInput
+          placeholder="Enter location"
+          placeholderTextColor="#888"
+          value={location}
+          onChangeText={setLocation}
+          style={{ color: 'white', padding: 15, fontSize: 18 }}
+        />
+      </View>
+
+      <Text style={styles.Title}>Description</Text>
+      <View style={styles.Box}>
+        <TextInput
+          placeholder="Enter description"
+          placeholderTextColor="#888"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          style={{ color: 'white', padding: 15, fontSize: 18 }}
+        />
+      </View>
+
+      <Text style={styles.Title}>Maximum Participants</Text>
+      <View style={styles.Box}>
+        <TextInput
+          placeholder="Enter max participants"
+          placeholderTextColor="#888"
+          value={maxParticipants}
+          onChangeText={setMaxParticipants}
+          keyboardType="numeric"
+          style={{ color: 'white', padding: 15, fontSize: 18 }}
+        />
+      </View>
+
+      <Text style={styles.Title}>Category</Text>
       <View style={styles.MainCategory}>
-        <View style={[styles.categorybox, styles.selectedCategory]}>
-          <Text style={styles.categoryText}>Party</Text>
-        </View>
-        <View style={styles.categorybox}>
-          <Text style={styles.categoryText}>Music</Text>
-        </View>
-        <View style={styles.categorybox}>
-          <Text style={styles.categoryText}>Workshop</Text>
-        </View>
-        <View style={styles.categorybox}>
-          <Text style={styles.categoryText}>Business</Text>
-        </View>
-      </View>
-      <Text style={styles.paymentTitle}>Payment Details</Text>
-      <View style={styles.paymentHeader}>
-        <Text style={styles.priceLabel}>Price</Text>
-        <Text style={styles.paymentMethodLabel}>Payment Method</Text>
+        {['Sports', 'Social', 'Education', 'Business', 'Other'].map(item => (
+          <Pressable
+            key={item}
+            style={[
+              styles.categorybox,
+              category === item && styles.selectedCategory,
+            ]}
+            onPress={() => setCategory(item)}
+          >
+            <Text style={styles.categoryText}>{item}</Text>
+          </Pressable>
+        ))}
       </View>
 
-      <View style={styles.payment}>
-        <View style={styles.priceBox}>
-          <Text style={styles.priceText}>$ 0.00</Text>
-        </View>
-
-        <View style={styles.paymentMethodBox}>
-          <Text style={styles.paymentMethodText}>Bank Transfer</Text>
-        </View>
+      <Text style={styles.Title}>Payment</Text>
+      <View style={styles.Box}>
+        <TextInput
+          placeholder="Amount"
+          placeholderTextColor="#888"
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="numeric"
+          style={{ color: 'white', padding: 15, fontSize: 18 }}
+        />
       </View>
-      {/* Publish Button */}
-      <View style={styles.publishButton}>
+
+      <View style={styles.Box}>
+        <TextInput
+          placeholder="Payment Method"
+          placeholderTextColor="#888"
+          value={paymentMethod}
+          onChangeText={setPaymentMethod}
+          style={{ color: 'white', padding: 15, fontSize: 18 }}
+        />
+      </View>
+
+      <Pressable style={styles.publishButton} onPress={publishEvent}>
         <Text style={styles.publishText}>Publish Event</Text>
-      </View>
+      </Pressable>
     </ScrollView>
   );
 };
 
 export default Create;
 
+// Styles remain same as before
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#10151C',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 10,
-  },
-
-  backArrow: {
-    width: 24,
-    height: 24,
-  },
-
+  container: { flex: 1, backgroundColor: '#10151C' },
+  backButton: { position: 'absolute', top: 60, left: 20, zIndex: 10 },
+  backArrow: { width: 24, height: 24 },
   EventText: {
     color: 'white',
     fontSize: 32,
@@ -127,58 +237,18 @@ const styles = StyleSheet.create({
   photo: {
     width: '90%',
     height: 180,
-    backgroundColor: 'black',
+    backgroundColor: '#22232A',
     borderColor: '#666666',
     borderWidth: 2,
     marginLeft: 20,
     marginTop: 15,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+    borderRadius: 10,
   },
-  editPhotoText: {
-    color: '#888',
-    fontSize: 16,
-  },
-  Box1: {
-    width: '90%',
-    height: 70,
-    borderRadius: 5,
-    backgroundColor: '#22232A',
-    borderColor: '#616161',
-    borderWidth: 2,
-    marginBottom: 30,
-    marginLeft: 19,
-  },
-  Box2: {
-    width: '90%',
-    height: 70,
-    borderRadius: 5,
-    backgroundColor: '#22232A',
-    borderColor: '#616161',
-    borderWidth: 2,
-    marginBottom: 35,
-    marginLeft: 19,
-  },
-  Box3: {
-    width: '90%',
-    height: 70,
-    borderRadius: 5,
-    backgroundColor: '#22232A',
-    borderColor: '#616161',
-    borderWidth: 2,
-    marginBottom: 35,
-    marginLeft: 19,
-  },
-  Box4: {
-    width: '90%',
-    height: 70,
-    borderRadius: 5,
-    backgroundColor: '#22232A',
-    borderColor: '#616161',
-    borderWidth: 2,
-    marginBottom: 35,
-    marginLeft: 19,
-  },
+  coverImage: { width: '100%', height: '100%' },
+  editPhotoText: { color: '#888', fontSize: 16 },
   Title: {
     color: 'white',
     fontSize: 20,
@@ -186,56 +256,16 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontWeight: 'bold',
   },
-  location: {
-    color: 'white',
-    fontSize: 20,
-    marginLeft: 20,
-    fontWeight: 'bold',
-  },
-  Time: {
-    color: 'white',
-    fontSize: 20,
-    marginLeft: 20,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  startBox: {
+  Box: {
     width: '90%',
     height: 70,
-    borderRadius: 5,
     backgroundColor: '#22232A',
     borderColor: '#616161',
     borderWidth: 2,
+    marginBottom: 30,
     marginLeft: 19,
     justifyContent: 'center',
-  },
-  startText: {
-    color: 'white',
-    fontSize: 18,
-    marginLeft: 15,
-  },
-  endBox: {
-    width: '90%',
-    height: 70,
-    borderRadius: 5,
-    backgroundColor: '#22232A',
-    borderColor: '#616161',
-    borderWidth: 2,
-    marginTop: 10,
-    marginLeft: 19,
-    justifyContent: 'center',
-  },
-  endText: {
-    color: 'white',
-    fontSize: 18,
-    marginLeft: 15,
-  },
-  category: {
-    color: 'white',
-    fontSize: 20,
-    marginLeft: 20,
-    marginTop: 25,
-    fontWeight: 'bold',
+    borderRadius: 10,
   },
   MainCategory: {
     flexDirection: 'row',
@@ -251,78 +281,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  selectedCategory: {
-    backgroundColor: '#3B82F6', // blue like in the screenshot for "Party"
-  },
-  categoryText: {
-    color: 'white',
-    fontSize: 16,
-  },
-
-  // Payment Section
-  paymentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginTop: 20,
-  },
-
-  payment: {
-    flexDirection: 'row',
-  },
-  paymentTitle: {
-    color: 'white',
-    fontSize: 20,
-    marginLeft: 20,
-    marginTop: 30,
-    fontWeight: 'bold',
-  },
-  priceLabel: {
-    color: 'white',
-    fontSize: 18,
-    marginRight: 90,
-    marginTop: 20,
-  },
-  priceBox: {
-    width: '30%',
-    height: 70,
-    borderRadius: 5,
-    backgroundColor: '#22232A',
-    borderColor: '#616161',
-    borderWidth: 2,
-    marginLeft: 19,
-    marginTop: 10,
-    justifyContent: 'center',
-    paddingLeft: 15,
-  },
-  priceText: {
-    color: 'white',
-    fontSize: 20,
-    marginLeft: 5,
-  },
-  paymentMethodLabel: {
-    color: 'white',
-    fontSize: 18,
-    marginLeft: 20,
-    marginTop: 20,
-  },
-  paymentMethodBox: {
-    width: '60%',
-    height: 70,
-    borderRadius: 5,
-    backgroundColor: '#22232A',
-    borderColor: '#616161',
-    borderWidth: 2,
-    marginLeft: 19,
-    marginTop: 10,
-    justifyContent: 'center',
-    paddingLeft: 15,
-    marginBottom: 30,
-  },
-  paymentMethodText: {
-    color: 'white',
-    fontSize: 18,
-  },
+  selectedCategory: { backgroundColor: '#3B82F6' },
+  categoryText: { color: 'white', fontSize: 16 },
   publishButton: {
     width: '90%',
     height: 60,
@@ -331,11 +291,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
-    marginTop: 10,
+    marginTop: 20,
   },
-  publishText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
+  publishText: { color: 'white', fontSize: 20, fontWeight: 'bold' },
 });

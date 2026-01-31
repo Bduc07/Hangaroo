@@ -1,18 +1,26 @@
-// src/services/api.ts
+import BASE_URL from '../config/baseUrl';
+
 export const api = async (
   endpoint: string,
-  method: 'GET' | 'POST' = 'GET',
+  method: string,
   body?: any,
   token?: string,
 ) => {
-  const headers: any = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  let headers: any = {};
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  // For JSON body
+  if (!(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body,
   });
 
-  return res.json();
+  return response.json();
 };

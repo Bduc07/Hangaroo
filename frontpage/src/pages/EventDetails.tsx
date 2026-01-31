@@ -6,42 +6,42 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { RootStackParamList } from '../routes/types';
-
-type EventsHostedNavProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'EventsHosted'
->;
 
 const EventDetails = () => {
-  const navigation = useNavigation<EventsHostedNavProp>();
-  const route = useRoute();
-  const { eventId } = route.params as { eventId: string };
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { eventId } = route.params;
 
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [joining, setJoining] = useState(false); // track join button loading
 
   // Fetch event details
   useEffect(() => {
     const fetchEvent = async () => {
-      if (!eventId) return;
-
       try {
         const token = await AsyncStorage.getItem('token');
+
         const res = await fetch(
           `http://10.0.2.2:3000/api/v1/events/${eventId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
+
         const data = await res.json();
-        if (data.success) setEvent(data.event);
+        if (data.success) {
+          setEvent(data.event);
+        } else {
+          setEvent(null);
+        }
       } catch (err) {
         console.error(err);
+        setEvent(null);
       } finally {
         setLoading(false);
       }
@@ -49,6 +49,42 @@ const EventDetails = () => {
 
     fetchEvent();
   }, [eventId]);
+
+  // Handle "Book Ticket"
+  const handleBook = async () => {
+    if (!eventId) return;
+
+    try {
+      setJoining(true);
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Error', 'Please login first');
+        return;
+      }
+
+      const res = await fetch(
+        `http://10.0.2.2:3000/api/v1/events/${eventId}/join`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        Alert.alert('Success', 'You have successfully joined this event!');
+        setEvent(data.event); // update participants if needed
+      } else {
+        Alert.alert('Error', data.error || 'Failed to join event');
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setJoining(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -70,29 +106,65 @@ const EventDetails = () => {
 
   return (
     <View style={styles.container}>
+      {/* Back */}
       <Pressable style={styles.backArrow} onPress={() => navigation.goBack()}>
         <Image
           source={require('../assets/arrow.png')}
           style={styles.arrowIcon}
         />
       </Pressable>
+
+      {/* Title */}
       <Text style={styles.text}>{event.title}</Text>
-      <View style={styles.Image}></View>
+
+      {/* Image */}
+      <View style={styles.Image}>
+        {event.imageUrl && (
+          <Image
+            source={{ uri: event.imageUrl }}
+            style={{ width: '100%', height: '100%' }}
+          />
+        )}
+      </View>
+
+      {/* Description */}
       <Text style={styles.descriptionText}>Description</Text>
       <View style={styles.description}>
         <Text style={{ color: '#ccc', padding: 10 }}>{event.description}</Text>
       </View>
+
+      {/* Date */}
       <View style={styles.calender}>
         <Image source={require('../assets/calender.png')} style={styles.logo} />
+        <Text style={styles.infoText}>
+          {event.startTime ? new Date(event.startTime).toLocaleString() : 'N/A'}
+        </Text>
       </View>
+
+      {/* Price */}
       <View style={styles.ticket}>
         <Image source={require('../assets/ticket.png')} style={styles.logo} />
+        <Text style={styles.infoText}>
+          Rs. {event.price ?? 0} ({event.paymentMethod ?? 'N/A'})
+        </Text>
       </View>
+
+      {/* Location */}
       <Text style={styles.locationtext}>Location</Text>
-      <View style={styles.location}></View>
-      <View style={styles.bookticket}>
-        <Text style={styles.Book}>Book Ticket</Text>
+      <View style={styles.location}>
+        <Text style={styles.infoText}>{event.location?.address ?? 'N/A'}</Text>
       </View>
+
+      {/* Book Button */}
+      <Pressable
+        style={[styles.bookticket, { opacity: joining ? 0.7 : 1 }]}
+        onPress={handleBook}
+        disabled={joining}
+      >
+        <Text style={styles.Book}>
+          {joining ? 'Booking...' : 'Book Ticket'}
+        </Text>
+      </Pressable>
     </View>
   );
 };
@@ -118,8 +190,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   arrowIcon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
   },
   Image: {
     width: '80%',
@@ -153,6 +225,8 @@ const styles = StyleSheet.create({
     marginLeft: 40,
     marginTop: 10,
     borderRadius: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   ticket: {
     width: '80%',
@@ -163,10 +237,13 @@ const styles = StyleSheet.create({
     marginLeft: 40,
     marginTop: 10,
     borderRadius: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   logo: {
-    marginTop: 12,
     marginLeft: 10,
+    width: 24,
+    height: 24,
   },
   location: {
     width: '80%',
@@ -177,6 +254,7 @@ const styles = StyleSheet.create({
     marginLeft: 40,
     marginTop: 10,
     borderRadius: 5,
+    justifyContent: 'center',
   },
   locationtext: {
     color: 'white',
@@ -197,6 +275,10 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
     alignSelf: 'center',
-    marginTop: 17,
+  },
+  infoText: {
+    color: '#ccc',
+    marginLeft: 15,
+    fontSize: 16,
   },
 });

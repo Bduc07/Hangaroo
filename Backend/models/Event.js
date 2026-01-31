@@ -2,55 +2,47 @@ const mongoose = require("mongoose");
 
 const eventSchema = new mongoose.Schema(
   {
-    title: {
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true },
+
+    host: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    location: {
       type: String,
       required: true,
       trim: true,
     },
-    description: {
-      type: String,
-      required: true,
-    },
-    host: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // ✅ Matches model name in db.js
-      required: true,
-    },
-    location: {
-      address: { type: String, required: true },
-      coordinates: {
-        lat: { type: Number },
-        lng: { type: Number },
-      },
-    },
-    startTime: {
-      type: Date,
-      required: true,
-    },
-    endTime: {
-      type: Date,
-      required: true,
-    },
-    maxParticipants: {
-      type: Number,
-      default: 50,
-    },
+
+    startTime: { type: Date, required: true },
+    endTime: { type: Date, required: true },
+
+    maxParticipants: { type: Number, default: 50 },
+
     category: {
       type: String,
-      enum: ["sports", "social", "education", "business", "other"],
-      default: "social",
+      enum: ["Sports", "Festivals", "Music", "Workshop", "Business", "Other"],
+      default: "Other",
     },
-    participants: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User", // ✅ Matches model name
-      },
-    ],
+
+    participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
+    // ✅ This will store full URL from multer upload
     imageUrl: String,
+
+    payment: {
+      method: {
+        type: String,
+        enum: ["Bank Transfer", "Cash"],
+        default: "Bank Transfer",
+      },
+      amount: { type: Number, default: 0 },
+    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Event", eventSchema);

@@ -111,15 +111,17 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   LogOutBox: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#616161',
+    borderColor: "#22232A",
+    borderWidth:4,
     height: 60,
-    marginHorizontal: 20,
+    marginHorizontal: 50,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoutText: {
-    color: 'white',
+    color: 'red',
     fontWeight: 'bold',
     fontSize: 18,
   },
@@ -130,7 +132,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   arrowIcon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 15,
+    marginTop: 15,
   },
 });

@@ -12,6 +12,7 @@ const eventRouter = require("./routes/events"); // ✅ file name matches
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/events", eventRouter);
+app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {
   res.json({ message: "Event Management API is running!" });

@@ -16,8 +16,7 @@ const app = !admin.apps.length
 // ======================
 router.post("/send", async (req, res) => {
   const { title, body } = req.body;
-  if (!title || !body)
-    return res.status(400).json({ error: "title and body required" });
+  if (!title || !body) return res.status(400).json({ error: "title and body required" });
 
   try {
     // Save in DB
@@ -26,7 +25,7 @@ router.post("/send", async (req, res) => {
 
     // Send FCM to all users
     const users = await User.find({ fcmToken: { $exists: true, $ne: "" } });
-    const tokens = users.map((u) => u.fcmToken);
+    const tokens = users.map(u => u.fcmToken);
 
     if (tokens.length > 0) {
       const response = await admin.messaging().sendMulticast({

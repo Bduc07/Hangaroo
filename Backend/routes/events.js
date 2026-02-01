@@ -1,30 +1,38 @@
 const express = require("express");
-const multer = require("multer"); // ✅ import multer
+const multer = require("multer");
 const path = require("path");
 const Event = require("../models/Event");
+const Notification = require("../models/Notification");
+const { User } = require("../db");
 const userMiddleware = require("../middleware/userMiddleware");
+const admin = require("firebase-admin");
+const serviceAccount = require("../serviceAccountKey.json");
+
+// Initialize Firebase Admin only once
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
 
 const eventRouter = express.Router();
 eventRouter.use(userMiddleware);
 
-// Multer config — put it here, inside the route file
+// ------------------
+// Multer config for file uploads
+// ------------------
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/"); // make sure this folder exists
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + path.extname(file.originalname)),
 });
+const upload = multer({ storage });
 
-const upload = multer({ storage }); // ✅ define upload
-
-// Example route using Multer
+// ======================
+// CREATE EVENT + SEND NOTIFICATION
+// ======================
 eventRouter.post("/", upload.single("coverPhoto"), async (req, res) => {
   try {
-    console.log("req.body:", req.body);
-    console.log("req.file:", req.file);
-
     const { title, description, location } = req.body;
 
     if (!title || !description || !location) {
@@ -37,6 +45,7 @@ eventRouter.post("/", upload.single("coverPhoto"), async (req, res) => {
       ? `http://10.0.2.2:3000/uploads/${req.file.filename}`
       : "";
 
+    // 1️⃣ Create the event
     const event = await Event.create({
       title,
       description,
@@ -50,15 +59,39 @@ eventRouter.post("/", upload.single("coverPhoto"), async (req, res) => {
       payment: { method: "Bank Transfer", amount: 0 },
     });
 
+    // 2️⃣ Create a notification for this event
+    const notification = new Notification({
+      title: "New Event Hosted!",
+      body: `${req.userName || "Someone"} just hosted: ${title}`,
+    });
+    await notification.save();
+
+    // 3️⃣ Send push to all users except the creator
+    const users = await User.find({
+      _id: { $ne: req.userId },
+      fcmToken: { $exists: true, $ne: "" },
+    });
+    const tokens = users.map((u) => u.fcmToken);
+
+    if (tokens.length > 0) {
+      await admin.messaging().sendEachForMulticast({
+        tokens,
+        notification: {
+          title: notification.title,
+          body: notification.body,
+        },
+      });
+    }
+
     res.status(201).json({ success: true, event });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 // ======================
 // GET EVENTS JOINED BY LOGGED-IN USER
-// Must come BEFORE /:eventId route
 // ======================
 eventRouter.get("/joined", async (req, res) => {
   try {
@@ -72,6 +105,10 @@ eventRouter.get("/joined", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// ======================
+// GET EVENTS HOSTED BY LOGGED-IN USER
+// ======================
 eventRouter.get("/hosted", async (req, res) => {
   try {
     const events = await Event.find({ host: req.userId })
@@ -84,6 +121,7 @@ eventRouter.get("/hosted", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 // ======================
 // GET SINGLE EVENT
 // ======================
@@ -101,7 +139,6 @@ eventRouter.get("/:eventId", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
 // ======================
 // GET ALL EVENTS (with search & pagination)
 // ======================
@@ -152,14 +189,12 @@ eventRouter.post("/:eventId/join", async (req, res) => {
     if (!event)
       return res.status(404).json({ success: false, error: "Event not found" });
 
-    // ✅ Check if already joined
     if (event.participants.some((p) => p.equals(req.userId))) {
       return res
         .status(400)
         .json({ success: false, error: "Already joined this event" });
     }
 
-    // ✅ Check max participants
     if (event.participants.length >= event.maxParticipants) {
       return res.status(400).json({ success: false, error: "Event is full" });
     }

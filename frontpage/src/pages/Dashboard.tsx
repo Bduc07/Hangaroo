@@ -69,10 +69,12 @@ const Dashboard = () => {
           />
         </View>
 
-        <Image
-          source={require('../assets/Bellring.png')}
-          style={styles.Bellring}
-        />
+        <Pressable onPress={() => navigation.navigate('Notifications')}>
+          <Image
+            source={require('../assets/Bellring.png')}
+            style={styles.Bellring}
+          />
+        </Pressable>
       </View>
 
       {/* Circle Preferences */}

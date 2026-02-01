@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "648562511944",
+    "project_id": "hangaroo-804f1",
+    "storage_bucket": "hangaroo-804f1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:648562511944:android:c25bec546cbf8abcc3887d",
+        "android_client_info": {
+          "package_name": "com.frontpage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8D9264DpbbYcvJaDvWkdgW-BMrDHeayM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

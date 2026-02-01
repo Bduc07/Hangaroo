@@ -10,13 +10,17 @@
     "test": "jest"
   },
   "dependencies": {
+    "@hapi/hoek": "^11.0.7",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.6.0",
+    "@react-native-firebase/app": "^23.8.5",
+    "@react-native-firebase/messaging": "^23.8.5",
     "@react-native/new-app-screen": "0.83.1",
     "@react-navigation/drawer": "^7.7.10",
     "@react-navigation/native": "^7.1.26",
     "@react-navigation/native-stack": "^7.9.0",
     "axios": "^1.13.2",
+    "joi": "^18.0.2",
     "multer": "^2.0.2",
     "react": "19.2.0",
     "react-native": "0.83.1",

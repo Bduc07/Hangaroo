@@ -6,6 +6,7 @@ import Login from '../pages/Login';
 import SignUp from '../pages/SignUp';
 import DrawerNavigator from './DrawerNavigator';
 import EventDetails from '../pages/EventDetails';
+import Notifications from '../pages/Notifications';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -45,6 +46,7 @@ const AppNavigator = () => {
 
           {/* Screens outside drawer */}
           <Stack.Screen name="EventDetails" component={EventDetails} />
+          <Stack.Screen name="Notifications" component={Notifications} />
         </>
       )}
     </Stack.Navigator>

@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   password: String,
   firstName: String,
   lastName: String,
+  fcmToken: { type: String },
 });
 
 const adminSchema = new mongoose.Schema({

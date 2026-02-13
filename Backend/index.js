@@ -9,10 +9,12 @@ const userRouter = require("./routes/user");
 const adminRouter = require("./routes/admin");
 const eventRouter = require("./routes/events"); // ✅ file name matches
 const notificationsRouter = require("./routes/notifications");
+const googleAuthRouter = require("./routes/auth/google");
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/events", eventRouter);
 app.use("/uploads", express.static("uploads"));
+app.use("/api/v1/auth/google", googleAuthRouter);
 
 app.use("/api/notifications", notificationsRouter);
 

@@ -8,9 +8,11 @@ import {
   ScrollView,
   ActivityIndicator,
   TextInput,
+  Dimensions,
 } from 'react-native';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+const { width, height } = Dimensions.get('window');
 
 const Dashboard = () => {
   const navigation = useNavigation();
@@ -21,9 +23,12 @@ const Dashboard = () => {
   const fetchEvents = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const res = await fetch('http://10.0.2.2:3000/api/v1/events', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        'http://10.0.2.2:3000/api/v1/events/ongoing/all',
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const data = await res.json();
       if (data.success) setEvents(data.events);
     } catch (err) {
@@ -61,9 +66,9 @@ const Dashboard = () => {
 
         <View style={[styles.searchBox, { justifyContent: 'flex-start' }]}>
           <TextInput
-            placeholder="Search events..."
+            placeholder="Search events"
             placeholderTextColor="#888"
-            style={{ color: 'white', fontSize: 16 }}
+            style={{ color: 'white', fontSize: 16, marginTop: 5 }}
             value={search}
             onChangeText={setSearch}
           />
@@ -131,15 +136,12 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
-
-// CSS unchanged
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#10151C',
-    paddingHorizontal: 10,
-    paddingTop: 50,
+    paddingHorizontal: width * 0.03,
+    paddingTop: height * 0.03, // reduced from 0.06 to move row up
   },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
@@ -147,54 +149,70 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: height * 0.02, // optional spacing below
   },
-  Boylogo: { width: 40, height: 40, borderRadius: 20 },
+  Boylogo: {
+    width: width * 0.1,
+    height: width * 0.1,
+    borderRadius: (width * 0.1) / 2,
+  },
   searchBox: {
-    width: '60%',
-    height: 50,
+    flex: 1,
+    height: height * 0.065,
     backgroundColor: '#162233',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#122035',
     paddingHorizontal: 10,
+    marginHorizontal: 10,
+    justifyContent: 'center',
   },
-  logo: { width: 25, height: 25 },
-  Bellring: { width: 30, height: 30 },
+  Bellring: { width: width * 0.075, height: width * 0.075 },
 
   CircleBox: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 30,
+    marginTop: height * 0.04,
   },
-  Image: { width: 70, height: 70, borderRadius: 35 },
+  Image: {
+    width: width * 0.18,
+    height: width * 0.18,
+    borderRadius: (width * 0.18) / 2,
+  },
 
   ChooseBox: {
-    width: 120,
-    height: 30,
+    width: width * 0.3,
+    height: height * 0.04,
     backgroundColor: 'white',
     borderRadius: 5,
-    marginTop: 10,
+    marginTop: height * 0.015,
     alignSelf: 'flex-end',
     justifyContent: 'center',
   },
-  ChooseText: { textAlign: 'center', fontWeight: '700' },
+  ChooseText: {
+    textAlign: 'center',
+    fontWeight: '700',
+    fontSize: height * 0.018,
+  },
 
-  EventBox: { marginTop: 30 },
+  EventBox: { marginTop: height * 0.04 },
   Event: {
     width: '100%',
     backgroundColor: '#22232A',
     borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: height * 0.02,
     padding: 10,
   },
   eventImage: {
     width: '100%',
-    height: 150,
+    height: height * 0.22,
     borderRadius: 10,
     marginBottom: 10,
   },
-  eventTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  eventDesc: { color: '#ccc', fontSize: 14, marginBottom: 5 },
-  eventInfo: { color: '#aaa', fontSize: 12 },
-  noEvents: { color: 'white', textAlign: 'center', marginTop: 20 },
+  eventTitle: { color: 'white', fontSize: height * 0.022, fontWeight: 'bold' },
+  eventDesc: { color: '#ccc', fontSize: height * 0.017, marginBottom: 5 },
+  eventInfo: { color: '#aaa', fontSize: height * 0.015 },
+  noEvents: { color: 'white', textAlign: 'center', marginTop: height * 0.03 },
 });
+
+export default Dashboard;

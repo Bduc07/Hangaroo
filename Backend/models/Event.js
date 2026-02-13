@@ -19,7 +19,7 @@ const eventSchema = new mongoose.Schema(
 
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
-
+    isCompleted: { type: Boolean, default: false },
     maxParticipants: { type: Number, default: 50 },
 
     category: {

@@ -6,6 +6,7 @@ import EventsHosted from '../pages/EventsHosted';
 import EventsJoined from '../pages/EventsJoined';
 import Achievements from '../pages/Achievements';
 import Create from '../pages/Create';
+import ManageEvents from '../pages/ManageEvents'; // Make sure this exists
 
 const Drawer = createDrawerNavigator();
 
@@ -28,10 +29,11 @@ const DrawerNavigator = ({ onLogout }) => {
       <Drawer.Screen name="Profile">
         {props => <Profile {...props} onLogout={onLogout} />}
       </Drawer.Screen>
+      <Drawer.Screen name="Create Event" component={Create} />
+      <Drawer.Screen name="Manage Events" component={ManageEvents} />
       <Drawer.Screen name="Events Hosted" component={EventsHosted} />
       <Drawer.Screen name="Events Joined" component={EventsJoined} />
       <Drawer.Screen name="Achievements" component={Achievements} />
-      <Drawer.Screen name="Create Event" component={Create} />
     </Drawer.Navigator>
   );
 };

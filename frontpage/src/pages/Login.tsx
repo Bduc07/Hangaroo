@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,25 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { configureGoogleSignIn } from '../config/googleAuth';
 
-const Login = ({ onLogin }) => {
-  const navigation = useNavigation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+interface LoginProps {
+  onLogin: (loggedIn: boolean) => void;
+}
 
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const navigation = useNavigation<any>();
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [googleLoading, setGoogleLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
+
+  // Normal email/password login
   const handleLogin = async () => {
     const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
@@ -30,7 +42,6 @@ const Login = ({ onLogin }) => {
     }
 
     setLoading(true);
-
     try {
       const response = await axios.post(
         'http://10.0.2.2:3000/api/v1/user/signin',
@@ -41,7 +52,7 @@ const Login = ({ onLogin }) => {
       await AsyncStorage.setItem('token', token);
       onLogin(true);
       Alert.alert('Success', 'Logged in successfully!');
-    } catch (err) {
+    } catch (err: any) {
       console.log(err.response?.data || err.message);
       Alert.alert('Error', 'Login failed. Check email/password.');
     } finally {
@@ -49,10 +60,36 @@ const Login = ({ onLogin }) => {
     }
   };
 
+  // Google login
+  // After successful Google login
+  const signInWithGoogle = async () => {
+    try {
+      const userInfo = await GoogleSignin.signIn();
+      const { idToken } = await GoogleSignin.getTokens();
+
+      // Send to backend
+      const res = await axios.post(`http://10.0.2.2:3000/api/v1/auth/google`, {
+        idToken,
+      });
+
+      // Save token
+      await AsyncStorage.setItem('token', res.data.token);
+
+      // ✅ Now you have user data FROM YOUR DATABASE
+      console.log('User from MongoDB:', res.data.user);
+
+      // You can now use this user data throughout your app
+      // For example, save to context or redux
+      onLogin(true);
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <Image source={require('../assets/Login.png')} style={styles.logo} />
       <Text style={styles.welcome}>Welcome Back</Text>
@@ -95,6 +132,16 @@ const Login = ({ onLogin }) => {
       >
         <Text style={styles.loginText}>
           {loading ? 'Logging in...' : 'Log In'}
+        </Text>
+      </Pressable>
+
+      <Pressable
+        style={[styles.googleButton, googleLoading && { opacity: 0.6 }]}
+        onPress={signInWithGoogle}
+        disabled={googleLoading}
+      >
+        <Text style={styles.googleButtonText}>
+          {googleLoading ? 'Signing in...' : 'Continue with Google'}
         </Text>
       </Pressable>
 
@@ -168,9 +215,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   loginText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  googleButton: {
+    width: '100%',
+    height: 64,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  googleButtonText: { color: '#000000', fontSize: 18, fontWeight: '700' },
   signupText: { color: '#FFFFFF', fontSize: 14 },
   signupLink: { color: '#2563EB', fontWeight: '700' },
 });

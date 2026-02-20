@@ -9,11 +9,15 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 import { configureGoogleSignIn } from '../config/googleAuth';
 
 interface LoginProps {
@@ -31,13 +35,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     configureGoogleSignIn();
   }, []);
 
-  // Normal email/password login
+  // --- Standard Email/Password Login ---
   const handleLogin = async () => {
     const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
 
     if (!trimmedEmail || !trimmedPassword) {
-      Alert.alert('Error', 'Email and password are required');
+      Alert.alert('Error', 'Please enter both email and password');
       return;
     }
 
@@ -48,41 +52,67 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         { email: trimmedEmail, password: trimmedPassword },
       );
 
-      const token = response.data.token;
-      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('token', response.data.token);
       onLogin(true);
-      Alert.alert('Success', 'Logged in successfully!');
     } catch (err: any) {
-      console.log(err.response?.data || err.message);
-      Alert.alert('Error', 'Login failed. Check email/password.');
+      const errorMsg = err.response?.data?.message || 'Login failed';
+      Alert.alert('Error', errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  // Google login
-  // After successful Google login
+  // --- Real Google Login Implementation ---
   const signInWithGoogle = async () => {
+    setGoogleLoading(true);
     try {
-      const userInfo = await GoogleSignin.signIn();
-      const { idToken } = await GoogleSignin.getTokens();
+      // 1. Ensure Play Services are available (Required for Android)
+      await GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
+      });
 
-      // Send to backend
+      // 2. THE FIX: Clear existing session so Google shows the account picker.
+      // This prevents the "direct login" behavior your teacher mentioned.
+      try {
+        await GoogleSignin.signOut();
+      } catch (e) {
+        // Sign out fails if no one is signed in; we can safely ignore this.
+      }
+
+      // 3. Trigger the Google Identity UI
+      const signInResult = await GoogleSignin.signIn();
+
+      // In @react-native-google-signin/google-signin v11+, data is in .data
+      const idToken =
+        signInResult.data?.idToken || (signInResult as any).idToken;
+
+      if (!idToken) {
+        throw new Error('No ID Token received from Google');
+      }
+
+      // 4. Exchange Google Token for your App's JWT Token via your Backend
       const res = await axios.post(`http://10.0.2.2:3000/api/v1/auth/google`, {
         idToken,
       });
 
-      // Save token
+      // 5. Save your backend's token
       await AsyncStorage.setItem('token', res.data.token);
+      console.log('Backend verified user:', res.data.user);
 
-      // ✅ Now you have user data FROM YOUR DATABASE
-      console.log('User from MongoDB:', res.data.user);
-
-      // You can now use this user data throughout your app
-      // For example, save to context or redux
       onLogin(true);
-    } catch (error) {
-      console.error('Login failed:', error);
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log('User cancelled the login flow');
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log('Sign in is already in progress');
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Google Play Services not available or outdated');
+      } else {
+        console.error('Google Sign-In Error:', error);
+        Alert.alert('Error', 'Something went wrong with Google Sign-In');
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -118,31 +148,43 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       <Text
         style={styles.forgetPassword}
-        onPress={() =>
-          Alert.alert('Info', 'Password reset not implemented yet')
-        }
+        onPress={() => Alert.alert('Info', 'Reset link sent to email (Mock)')}
       >
         Forget Password?
       </Text>
 
+      {/* Standard Login Button */}
       <Pressable
-        style={[styles.loginButton, loading && { opacity: 0.6 }]}
+        style={[styles.loginButton, loading && { opacity: 0.7 }]}
         onPress={handleLogin}
-        disabled={loading}
+        disabled={loading || googleLoading}
       >
-        <Text style={styles.loginText}>
-          {loading ? 'Logging in...' : 'Log In'}
-        </Text>
+        {loading ? (
+          <ActivityIndicator color="#FFF" />
+        ) : (
+          <Text style={styles.loginText}>Log In</Text>
+        )}
       </Pressable>
 
+      {/* Google Login Button */}
       <Pressable
-        style={[styles.googleButton, googleLoading && { opacity: 0.6 }]}
+        style={[styles.googleButton, googleLoading && { opacity: 0.7 }]}
         onPress={signInWithGoogle}
-        disabled={googleLoading}
+        disabled={loading || googleLoading}
       >
-        <Text style={styles.googleButtonText}>
-          {googleLoading ? 'Signing in...' : 'Continue with Google'}
-        </Text>
+        <View style={styles.googleContent}>
+          {googleLoading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <>
+              <Image
+                source={require('../assets/google_logo.png')}
+                style={styles.googleIcon}
+              />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </>
+          )}
+        </View>
       </Pressable>
 
       <Text style={styles.signupText}>
@@ -201,7 +243,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   passwordInput: { flex: 1, color: 'white', fontSize: 16 },
-  eyeIcon: { width: 24, height: 24 },
+  eyeIcon: { width: 20, height: 15 },
   forgetPassword: {
     color: '#FFFFFF',
     fontSize: 14,
@@ -221,13 +263,17 @@ const styles = StyleSheet.create({
   googleButton: {
     width: '100%',
     height: 64,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
   },
-  googleButtonText: { color: '#000000', fontSize: 18, fontWeight: '700' },
+  googleContent: { flexDirection: 'row', alignItems: 'center' },
+  googleIcon: { width: 24, height: 24, marginRight: 12 },
+  googleButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   signupText: { color: '#FFFFFF', fontSize: 14 },
   signupLink: { color: '#2563EB', fontWeight: '700' },
 });

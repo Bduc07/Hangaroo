@@ -1,5 +1,4 @@
-// Notifications.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react'; // Added useCallback
 import {
   View,
   Text,
@@ -7,15 +6,16 @@ import {
   StyleSheet,
   Image,
   Pressable,
+  RefreshControl, // Added for pull-to-refresh
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native'; // ✅ direct import
+import { useNavigation, useFocusEffect } from '@react-navigation/native'; // Added useFocusEffect
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
 
-  // Fetch notifications from API
   const fetchNotifications = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -23,24 +23,33 @@ const Notifications = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) setNotifications(data.notifications);
+      if (data.success) {
+        setNotifications(data.notifications);
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Fetch Error:', err);
+    } finally {
+      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
+  // 🔥 THE FIX: This runs every time the screen comes into view
+  useFocusEffect(
+    useCallback(() => {
+      fetchNotifications();
+    }, []),
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
     fetchNotifications();
-  }, []);
+  };
 
   return (
     <View style={styles.container}>
-      {/* 🔙 Back Arrow */}
       <Pressable
         style={styles.backArrow}
-        onPress={
-          () => navigation.navigate('MainApp', { screen: 'Dashboard' }) // reliable back
-        }
+        onPress={() => navigation.navigate('MainApp', { screen: 'Dashboard' })}
       >
         <Image
           source={require('../assets/arrow.png')}
@@ -50,7 +59,16 @@ const Notifications = () => {
 
       <Text style={styles.header}>Notifications</Text>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 20 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#fff"
+          />
+        }
+      >
         {notifications.length === 0 && (
           <Text style={styles.empty}>No notifications yet</Text>
         )}
@@ -59,7 +77,12 @@ const Notifications = () => {
           <View key={index} style={styles.notification}>
             <Text style={styles.title}>{n.title}</Text>
             <Text style={styles.body}>{n.body}</Text>
-            <Text style={styles.date}>{new Date(n.date).toLocaleString()}</Text>
+            {/* Added a fallback check for the date field name */}
+            <Text style={styles.date}>
+              {n.createdAt
+                ? new Date(n.createdAt).toLocaleString()
+                : new Date().toLocaleString()}
+            </Text>
           </View>
         ))}
       </ScrollView>
@@ -74,17 +97,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#10151C',
     padding: 10,
-    paddingTop: 50,
+    paddingTop: 20,
   },
   backArrow: {
     position: 'absolute',
-    top: 50,
+    top: 25,
     left: 15,
     zIndex: 10,
   },
   arrowIcon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
   },
   header: {
     color: 'white',

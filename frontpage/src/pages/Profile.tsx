@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   },
   topBox: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 20,
   },
   Profile: {
     fontSize: 36,
@@ -127,13 +127,12 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     position: 'absolute',
-    top: 55,
+    top: 25,
     left: 10,
     zIndex: 10,
   },
   arrowIcon: {
-    width: 20,
-    height: 15,
+   width: 15, height: 15 ,
     marginTop: 15,
   },
 });

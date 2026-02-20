@@ -7,6 +7,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,50 +20,33 @@ const EventDetails = () => {
 
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [joining, setJoining] = useState(false); // track join button loading
+  const [joining, setJoining] = useState(false);
 
-  // Fetch event details
   useEffect(() => {
     const fetchEvent = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-
         const res = await fetch(
           `http://10.0.2.2:3000/api/v1/events/${eventId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-
         const data = await res.json();
-        if (data.success) {
-          setEvent(data.event);
-        } else {
-          setEvent(null);
-        }
+        if (data.success) setEvent(data.event);
       } catch (err) {
         console.error(err);
-        setEvent(null);
       } finally {
         setLoading(false);
       }
     };
-
     fetchEvent();
   }, [eventId]);
 
-  // Handle "Book Ticket"
   const handleBook = async () => {
-    if (!eventId) return;
-
     try {
       setJoining(true);
       const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert('Error', 'Please login first');
-        return;
-      }
-
       const res = await fetch(
         `http://10.0.2.2:3000/api/v1/events/${eventId}/join`,
         {
@@ -69,17 +54,14 @@ const EventDetails = () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       const data = await res.json();
-
       if (data.success) {
-        Alert.alert('Success', 'You have successfully joined this event!');
-        setEvent(data.event); // update participants if needed
+        Alert.alert('Success', 'You have successfully joined!');
+        setEvent(data.event);
       } else {
-        Alert.alert('Error', data.error || 'Failed to join event');
+        Alert.alert('Error', data.error || 'Failed to join');
       }
     } catch (err) {
-      console.error(err);
       Alert.alert('Error', 'Something went wrong');
     } finally {
       setJoining(false);
@@ -88,197 +70,220 @@ const EventDetails = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#3B82F6" />
-      </View>
-    );
-  }
-
-  if (!event) {
-    return (
-      <View style={styles.container}>
-        <Text style={{ color: 'white', alignSelf: 'center', marginTop: 20 }}>
-          Event not found
-        </Text>
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Back */}
-      <Pressable style={styles.backArrow} onPress={() => navigation.goBack()}>
-        <Image
-          source={require('../assets/arrow.png')}
-          style={styles.arrowIcon}
-        />
-      </Pressable>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Image
+              source={require('../assets/arrow.png')}
+              style={styles.backIcon}
+            />
+          </Pressable>
+          <Text style={styles.headerTitle}>Details</Text>
+          <View style={{ width: 40 }} />
+        </View>
 
-      {/* Title */}
-      <Text style={styles.text}>{event.title}</Text>
+        {/* Hero Image */}
+        <View style={styles.imageContainer}>
+          {event?.imageUrl ? (
+            <Image source={{ uri: event.imageUrl }} style={styles.heroImage} />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Text style={{ color: '#666' }}>No Image</Text>
+            </View>
+          )}
+        </View>
 
-      {/* Image */}
-      <View style={styles.Image}>
-        {event.imageUrl && (
-          <Image
-            source={{ uri: event.imageUrl }}
-            style={{ width: '100%', height: '100%' }}
-          />
-        )}
+        <View style={styles.contentWrapper}>
+          <Text style={styles.eventTitle}>{event?.title}</Text>
+
+          {/* Info Rows */}
+          <View style={styles.infoSection}>
+            <View style={styles.infoRow}>
+              <View style={styles.iconCircle}>
+                <Image
+                  source={require('../assets/calender.png')}
+                  style={styles.smallIcon}
+                />
+              </View>
+              <Text style={styles.infoText}>
+                {event?.startTime
+                  ? new Date(event.startTime).toLocaleString([], {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })
+                  : 'N/A'}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <View style={styles.iconCircle}>
+                <Image
+                  source={require('../assets/ticket.png')}
+                  style={styles.smallIcon}
+                />
+              </View>
+              <Text style={styles.infoText}>
+                Rs. {event?.payment?.amount ?? 0} •{' '}
+                {event?.payment?.method ?? 'Cash'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Description */}
+          <Text style={styles.sectionLabel}>Description</Text>
+          <Text style={styles.descriptionBody}>{event?.description}</Text>
+
+          {/* Location */}
+          <Text style={styles.sectionLabel}>Location</Text>
+          <View style={styles.locationCard}>
+            <Text style={styles.locationText}>
+              📍{' '}
+              {event?.location?.address ||
+                event?.location ||
+                'Location not specified'}
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Fixed Bottom Button */}
+      <View style={styles.bottomNav}>
+        <Pressable
+          style={[styles.bookButton, joining && { opacity: 0.7 }]}
+          onPress={handleBook}
+          disabled={joining}
+        >
+          {joining ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.bookButtonText}>Book Ticket</Text>
+          )}
+        </Pressable>
       </View>
-
-      {/* Description */}
-      <Text style={styles.descriptionText}>Description</Text>
-      <View style={styles.description}>
-        <Text style={{ color: '#ccc', padding: 10 }}>{event.description}</Text>
-      </View>
-
-      {/* Date */}
-      <View style={styles.calender}>
-        <Image source={require('../assets/calender.png')} style={styles.logo} />
-        <Text style={styles.infoText}>
-          {event.startTime ? new Date(event.startTime).toLocaleString() : 'N/A'}
-        </Text>
-      </View>
-
-      {/* Price */}
-      <View style={styles.ticket}>
-        <Image source={require('../assets/ticket.png')} style={styles.logo} />
-        <Text style={styles.infoText}>
-          Rs. {event.price ?? 0} ({event.paymentMethod ?? 'N/A'})
-        </Text>
-      </View>
-
-      {/* Location */}
-      <Text style={styles.locationtext}>Location</Text>
-      <View style={styles.location}>
-        <Text style={styles.infoText}>{event.location?.address ?? 'N/A'}</Text>
-      </View>
-
-      {/* Book Button */}
-      <Pressable
-        style={[styles.bookticket, { opacity: joining ? 0.7 : 1 }]}
-        onPress={handleBook}
-        disabled={joining}
-      >
-        <Text style={styles.Book}>
-          {joining ? 'Booking...' : 'Book Ticket'}
-        </Text>
-      </Pressable>
-    </View>
+    </SafeAreaView>
   );
 };
 
-export default EventDetails;
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#10151C',
+  container: { flex: 1, backgroundColor: '#10151C' },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  scrollContent: { paddingBottom: 120 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
-  text: {
+  backButton: {
+    padding: 8,
+    backgroundColor: '#22232A',
+    borderRadius: 10,
+  },
+  backIcon: { width: 20, height: 20, },
+  headerTitle: { color: 'white', fontSize: 36, fontWeight: '700' },
+
+  imageContainer: {
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+  heroImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: 20,
+    backgroundColor: '#22232A',
+  },
+  placeholderImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: 20,
+    backgroundColor: '#22232A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  contentWrapper: { paddingHorizontal: 25, marginTop: 25 },
+  eventTitle: {
     color: 'white',
-    fontSize: 30,
-    fontWeight: 'bold',
-    alignSelf: 'center',
-    marginTop: 40,
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 20,
   },
-  backArrow: {
+
+  infoSection: { marginBottom: 25 },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#22232A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  smallIcon: { width: 20, height: 20 },
+  infoText: { color: '#E5E7EB', fontSize: 16, fontWeight: '500' },
+
+  sectionLabel: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  descriptionBody: {
+    color: '#9CA3AF',
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 25,
+  },
+
+  locationCard: {
+    backgroundColor: '#22232A',
+    padding: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  locationText: { color: '#E5E7EB', fontSize: 15 },
+
+  bottomNav: {
     position: 'absolute',
-    top: 55,
-    left: 10,
-    zIndex: 10,
+    bottom: 0,
+    width: '100%',
+    padding: 20,
+    backgroundColor: '#10151C',
+    borderTopWidth: 1,
+    borderTopColor: '#1F2937',
   },
-  arrowIcon: {
-    width: 20,
-    height: 20,
-  },
-  Image: {
-    width: '80%',
-    height: '20%',
-    backgroundColor: 'white',
-    marginLeft: 40,
-    marginTop: 20,
-  },
-  descriptionText: {
-    color: 'white',
-    fontSize: 20,
-    marginLeft: 40,
-    marginTop: 20,
-  },
-  description: {
-    width: '80%',
-    height: '20%',
-    backgroundColor: '#22232A',
-    borderColor: '#22232A',
-    borderWidth: 3,
-    marginLeft: 40,
-    marginTop: 10,
-    borderRadius: 5,
-  },
-  calender: {
-    width: '80%',
-    height: '7%',
-    backgroundColor: '#22232A',
-    borderColor: '#22232A',
-    borderWidth: 3,
-    marginLeft: 40,
-    marginTop: 10,
-    borderRadius: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ticket: {
-    width: '80%',
-    height: '7%',
-    backgroundColor: '#22232A',
-    borderColor: '#22232A',
-    borderWidth: 3,
-    marginLeft: 40,
-    marginTop: 10,
-    borderRadius: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logo: {
-    marginLeft: 10,
-    width: 24,
-    height: 24,
-  },
-  location: {
-    width: '80%',
-    height: '7%',
-    backgroundColor: '#22232A',
-    borderColor: '#22232A',
-    borderWidth: 3,
-    marginLeft: 40,
-    marginTop: 10,
-    borderRadius: 5,
+  bookButton: {
+    backgroundColor: '#2563EB',
+    height: 56,
+    borderRadius: 16,
     justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  locationtext: {
-    color: 'white',
-    fontSize: 20,
-    marginLeft: 40,
-    marginTop: 10,
-  },
-  bookticket: {
-    width: '80%',
-    height: '7%',
-    backgroundColor: 'blue',
-    marginLeft: 40,
-    marginTop: 30,
-    borderRadius: 5,
-    justifyContent: 'center',
-  },
-  Book: {
-    color: 'white',
-    fontSize: 20,
-    alignSelf: 'center',
-  },
-  infoText: {
-    color: '#ccc',
-    marginLeft: 15,
-    fontSize: 16,
-  },
+  bookButtonText: { color: 'white', fontSize: 18, fontWeight: '700' },
 });
+
+export default EventDetails;

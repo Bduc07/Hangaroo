@@ -41,13 +41,31 @@ userRouter.post("/signin", async (req, res) => {
 });
 
 // TEST PROTECTED ROUTE
+
 userRouter.get("/profile", userMiddleware, async (req, res) => {
   try {
+    // Find user and explicitly ensure we get the points field
     const user = await User.findById(req.userId).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ user });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Wrap in success: true to match your frontend logic
+    res.json({
+      success: true,
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        points: user.points || 0, // Default to 0 if null/undefined
+      },
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Profile Error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 

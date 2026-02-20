@@ -14,17 +14,18 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../routes/types';
 import { launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 type CreateNavProp = NativeStackNavigationProp<RootStackParamList, 'MainApp'>;
 
 const categoryMapping: Record<string, string> = {
   Sports: 'Sports',
-  Social: 'Festivals',
-  Education: 'Workshop',
+  Festivals: 'Festivals',
+  Music: 'Music',
+  Workshop: 'Workshop',
   Business: 'Business',
   Other: 'Other',
 };
-
 const Create = () => {
   const navigation = useNavigation<CreateNavProp>();
 
@@ -36,6 +37,10 @@ const Create = () => {
   const [category, setCategory] = useState('Sports');
   const [price, setPrice] = useState('0');
   const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   const pickImage = () => {
     launchImageLibrary({ mediaType: 'photo', quality: 1 }, response => {
@@ -57,14 +62,23 @@ const Create = () => {
         Alert.alert('Error', 'Please login again');
         return;
       }
+      if (!startDate || !endDate) {
+        Alert.alert('Error', 'Please select start and end date & time');
+        return;
+      }
+
+      if (endDate <= startDate) {
+        Alert.alert('Error', 'End time must be after start time');
+        return;
+      }
 
       const formData = new FormData();
       formData.append('title', title);
       formData.append('description', description);
       formData.append('location', location);
       formData.append('maxParticipants', maxParticipants);
-      formData.append('startTime', new Date().toISOString());
-      formData.append('endTime', new Date().toISOString());
+      formData.append('startTime', startDate?.toISOString() || '');
+      formData.append('endTime', endDate?.toISOString() || '');
       formData.append('category', categoryMapping[category] || 'Other');
       formData.append('price', price);
       formData.append('paymentMethod', paymentMethod);
@@ -173,22 +187,66 @@ const Create = () => {
           style={{ color: 'white', padding: 15, fontSize: 18 }}
         />
       </View>
+      <Text style={styles.Title}>Date & Time</Text>
+
+      <Pressable style={styles.Box} onPress={() => setShowStartPicker(true)}>
+        <Text style={{ color: 'white', padding: 15, fontSize: 18 }}>
+          {startDate
+            ? startDate.toLocaleString()
+            : 'Starts (Select date & time)'}
+        </Text>
+      </Pressable>
+
+      {showStartPicker && (
+        <DateTimePicker
+          value={startDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowStartPicker(false);
+            if (selectedDate) setStartDate(selectedDate);
+          }}
+        />
+      )}
+      <Pressable style={styles.Box} onPress={() => setShowEndPicker(true)}>
+        <Text style={{ color: 'white', padding: 15, fontSize: 18 }}>
+          {endDate ? endDate.toLocaleString() : 'Ends (Select date & time)'}
+        </Text>
+      </Pressable>
+
+      {showEndPicker && (
+        <DateTimePicker
+          value={endDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowEndPicker(false);
+            if (selectedDate) setEndDate(selectedDate);
+          }}
+        />
+      )}
 
       <Text style={styles.Title}>Category</Text>
-      <View style={styles.MainCategory}>
-        {['Sports', 'Social', 'Education', 'Business', 'Other'].map(item => (
-          <Pressable
-            key={item}
-            style={[
-              styles.categorybox,
-              category === item && styles.selectedCategory,
-            ]}
-            onPress={() => setCategory(item)}
-          >
-            <Text style={styles.categoryText}>{item}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollableCategoryContainer}
+      >
+        {['Sports', 'Festivals', 'Music', 'Workshop', 'Business', 'Other'].map(
+          item => (
+            <Pressable
+              key={item}
+              style={[
+                styles.categorybox,
+                category === item && styles.selectedCategory,
+              ]}
+              onPress={() => setCategory(item)}
+            >
+              <Text style={styles.categoryText}>{item}</Text>
+            </Pressable>
+          ),
+        )}
+      </ScrollView>
 
       <Text style={styles.Title}>Payment</Text>
       <View style={styles.Box}>
@@ -225,19 +283,19 @@ export default Create;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#10151C' },
-  backButton: { position: 'absolute', top: 60, left: 20, zIndex: 10 },
-  backArrow: { width: 24, height: 24 },
+  backButton: { position: 'absolute', top: 35, left: 20, zIndex: 10 },
+  backArrow: { width: 15, height: 15 },
   EventText: {
     color: 'white',
-    fontSize: 32,
+    fontSize: 36,
     alignSelf: 'center',
-    marginTop: 60,
+    marginTop: 20,
     fontWeight: 'bold',
   },
   photo: {
     width: '90%',
-    height: 180,
-    backgroundColor: '#22232A',
+    height: 120,
+    backgroundColor: 'black',
     borderColor: '#666666',
     borderWidth: 2,
     marginLeft: 20,
@@ -262,27 +320,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#22232A',
     borderColor: '#616161',
     borderWidth: 2,
-    marginBottom: 30,
+    marginTop: 10,
     marginLeft: 19,
     justifyContent: 'center',
     borderRadius: 10,
   },
-  MainCategory: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
+  scrollableCategoryContainer: {
+    paddingLeft: 20, // Matches your margin-left
+    paddingRight: 10,
     marginTop: 15,
+    gap: 10, // Space between category items
   },
   categorybox: {
-    width: 100,
+    paddingHorizontal: 20, // Better than fixed width for scrolling
     height: 50,
     backgroundColor: '#22232A',
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#616161',
+    marginRight: 8, // Fallback gap for older RN versions
   },
-  selectedCategory: { backgroundColor: '#3B82F6' },
-  categoryText: { color: 'white', fontSize: 16 },
+  selectedCategory: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  categoryText: {
+    color: 'white',
+    fontSize: 14, // Slightly smaller to fit more on screen
+    fontWeight: '600',
+  },
   publishButton: {
     width: '90%',
     height: 60,

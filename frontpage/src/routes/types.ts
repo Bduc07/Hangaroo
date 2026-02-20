@@ -3,4 +3,7 @@ export type RootStackParamList = {
   SignUp: undefined;
   MainApp: undefined; // Drawer
   EventDetails: { eventId: string } | undefined;
+  CategoryResults: undefined;
+  EventJoined: undefined;
+  EventHosted: undefined;
 };

@@ -42,6 +42,11 @@ const Dashboard = () => {
     fetchEvents();
   }, []);
 
+  // Function to handle category clicks
+  const handleCategoryPress = categoryName => {
+    navigation.navigate('CategoryResults', { category: categoryName });
+  };
+
   const filteredEvents = events.filter(event =>
     event.title.toLowerCase().includes(search.toLowerCase()),
   );
@@ -82,30 +87,100 @@ const Dashboard = () => {
         </Pressable>
       </View>
 
-      {/* Circle Preferences */}
-      <View style={styles.CircleBox}>
-        <Image
-          source={require('../assets/Football.png')}
-          style={styles.Image}
-        />
-        <Image
-          source={require('../assets/Basketball.png')}
-          style={styles.Image}
-        />
-        <Image source={require('../assets/Dance.png')} style={styles.Image} />
-        <Image
-          source={require('../assets/Hackathon.png')}
-          style={styles.Image}
-        />
-        <Image source={require('../assets/Hiking.png')} style={styles.Image} />
-      </View>
+      {/* Circle Preferences - Now each one is clickable */}
+      <View style={styles.scrollContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.CircleBox}
+        >
+          {/* Festivals */}
+          <Pressable
+            style={styles.categoryItem}
+            onPress={() => handleCategoryPress('Festivals')}
+          >
+            <Image
+              source={require('../assets/festivals.png')}
+              style={styles.Image}
+            />
+            <Text style={styles.categoryText}>Festivals</Text>
+          </Pressable>
 
-      <View style={styles.ChooseBox}>
-        <Text style={styles.ChooseText}>Preference</Text>
+          {/* Sports */}
+          <Pressable
+            style={styles.categoryItem}
+            onPress={() => handleCategoryPress('Sports')}
+          >
+            <Image
+              source={require('../assets/sports.png')}
+              style={styles.Image}
+            />
+            <Text style={styles.categoryText}>Sports</Text>
+          </Pressable>
+
+          {/* Business */}
+          <Pressable
+            style={styles.categoryItem}
+            onPress={() => handleCategoryPress('Business')}
+          >
+            <Image
+              source={require('../assets/business.png')}
+              style={styles.Image}
+            />
+            <Text style={styles.categoryText}>Business</Text>
+          </Pressable>
+
+          {/* Music */}
+          <Pressable
+            style={styles.categoryItem}
+            onPress={() => handleCategoryPress('Music')}
+          >
+            <Image
+              source={require('../assets/music.png')}
+              style={styles.Image}
+            />
+            <Text style={styles.categoryText}>Music</Text>
+          </Pressable>
+
+          {/* Workshop */}
+          <Pressable
+            style={styles.categoryItem}
+            onPress={() => handleCategoryPress('Workshop')}
+          >
+            <Image
+              source={require('../assets/workshop.png')}
+              style={styles.Image}
+            />
+            <Text style={styles.categoryText}>Workshop</Text>
+          </Pressable>
+
+          {/* Others */}
+          <Pressable
+            style={styles.categoryItem}
+            onPress={() => handleCategoryPress('Other')}
+          >
+            <Image
+              source={require('../assets/others.png')}
+              style={styles.Image}
+            />
+            <Text style={styles.categoryText}>Others</Text>
+          </Pressable>
+        </ScrollView>
       </View>
 
       {/* Events List */}
       <View style={styles.EventBox}>
+        <Text
+          style={{
+            color: 'white',
+            fontSize: 20,
+            fontWeight: 'bold',
+            marginBottom: 15,
+          }}
+        >
+          Ongoing Events
+        </Text>
+
         {filteredEvents.length === 0 && (
           <Text style={styles.noEvents}>No events found</Text>
         )}
@@ -127,7 +202,7 @@ const Dashboard = () => {
             <Text style={styles.eventTitle}>{event.title}</Text>
             <Text style={styles.eventDesc}>{event.description}</Text>
             <Text style={styles.eventInfo}>
-              {event.location?.address || 'No location'} | {event.category}
+              {event.location || 'No location'} | {event.category}
             </Text>
           </Pressable>
         ))}
@@ -141,7 +216,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#10151C',
     paddingHorizontal: width * 0.03,
-    paddingTop: height * 0.03, // reduced from 0.06 to move row up
+    paddingTop: height * 0.03,
   },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
@@ -149,7 +224,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: height * 0.02, // optional spacing below
+    marginBottom: height * 0.02,
   },
   Boylogo: {
     width: width * 0.1,
@@ -169,30 +244,27 @@ const styles = StyleSheet.create({
   },
   Bellring: { width: width * 0.075, height: width * 0.075 },
 
+  scrollContainer: {
+    marginTop: height * 0.01,
+  },
   CircleBox: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: height * 0.04,
+    paddingHorizontal: 10,
+  },
+  categoryItem: {
+    alignItems: 'center',
+    marginRight: 20,
   },
   Image: {
     width: width * 0.18,
     height: width * 0.18,
     borderRadius: (width * 0.18) / 2,
+    marginBottom: 8,
   },
-
-  ChooseBox: {
-    width: width * 0.3,
-    height: height * 0.04,
-    backgroundColor: 'white',
-    borderRadius: 5,
-    marginTop: height * 0.015,
-    alignSelf: 'flex-end',
-    justifyContent: 'center',
-  },
-  ChooseText: {
-    textAlign: 'center',
-    fontWeight: '700',
-    fontSize: height * 0.018,
+  categoryText: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '500',
   },
 
   EventBox: { marginTop: height * 0.04 },

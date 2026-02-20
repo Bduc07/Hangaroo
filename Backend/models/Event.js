@@ -27,6 +27,7 @@ const eventSchema = new mongoose.Schema(
       enum: ["Sports", "Festivals", "Music", "Workshop", "Business", "Other"],
       default: "Other",
     },
+    
 
     participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
@@ -42,7 +43,10 @@ const eventSchema = new mongoose.Schema(
       amount: { type: Number, default: 0 },
     },
   },
+
+  
   { timestamps: true },
+  
 );
 
 module.exports = mongoose.model("Event", eventSchema);

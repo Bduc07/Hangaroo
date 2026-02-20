@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   firstName: String,
   lastName: String,
   fcmToken: { type: String },
+  points: { type: Number, default: 0 },
 });
 
 const adminSchema = new mongoose.Schema({

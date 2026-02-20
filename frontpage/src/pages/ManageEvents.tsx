@@ -8,7 +8,6 @@ import {
   FlatList,
   Dimensions,
   Image,
-  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,11 +23,11 @@ interface EventType {
   _id: string;
   title: string;
   startTime?: string;
-  location?: { address: string };
+  location?: string;
   participants?: any[];
 }
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const ManageEvents = () => {
   const navigation = useNavigation<ManageEventsNavProp>();
@@ -58,77 +57,75 @@ const ManageEvents = () => {
     }
   };
 
-  const handleCompleteEvent = async (eventId: string) => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) return;
-
-      const res = await fetch(
-        `http://10.0.2.2:3000/api/v1/events/${eventId}/complete`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token}` } },
-      );
-      const data = await res.json();
-      if (data.success) {
-        setEvents(prev => prev.filter(e => e._id !== eventId));
-      } else {
-        Alert.alert('Error', data.error || 'Failed to complete event');
-      }
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Something went wrong');
-    }
-  };
-
   const renderEvent = ({ item }: { item: EventType }) => (
-    <View style={styles.eventBox}>
-      <Pressable
-        onPress={() =>
-          navigation.navigate('EventManagement', { eventId: item._id })
-        }
-      >
-        <Text style={styles.eventTitle}>{item.title}</Text>
-        <Text style={styles.eventInfo}>
-          {item.startTime
-            ? new Date(item.startTime).toLocaleDateString()
-            : 'N/A'}{' '}
-          - {item.location?.address || 'No location'}
-        </Text>
-        <Text style={styles.participantsText}>
-          Participants: {item.participants?.length || 0}
-        </Text>
-      </Pressable>
+    <Pressable
+      style={styles.eventCard}
+      onPress={() =>
+        navigation.navigate('EventManagement', { eventId: item._id })
+      }
+    >
+      <View style={styles.cardContent}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.eventTitle}>{item.title}</Text>
+          <Text style={styles.eventInfo}>
+            📅{' '}
+            {item.startTime
+              ? new Date(item.startTime).toLocaleDateString()
+              : 'N/A'}
+          </Text>
+          <Text style={styles.eventInfo}>
+            📍 {item.location || 'Location not set'}
+          </Text>
+        </View>
 
-      <Pressable
-        style={styles.completeButton}
-        onPress={() =>
-          Alert.alert('Mark Event Completed', 'Are you sure?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Yes', onPress: () => handleCompleteEvent(item._id) },
-          ])
-        }
-      >
-        <Text style={styles.completeButtonText}>Mark as Completed</Text>
-      </Pressable>
-    </View>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>
+            {item.participants?.length || 0} Joined
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.footerLine}>
+        <Text style={styles.manageText}>
+          Tap to manage attendance & finalize →
+        </Text>
+      </View>
+    </Pressable>
   );
 
   return (
     <View style={styles.container}>
+      {/* --- Functional Back Button --- */}
+      <Pressable style={styles.backArrow} onPress={() => navigation.goBack()}>
+        <Image
+          source={require('../assets/arrow.png')}
+          style={styles.arrowIcon}
+        />
+      </Pressable>
+
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Ongoing Events</Text>
+        <Text style={styles.headerSubtitle}>
+          Select an event to manage participants
+        </Text>
+      </View>
+
       {loading ? (
         <ActivityIndicator
           size="large"
           color="#3B82F6"
-          style={{ marginTop: 100 }}
+          style={{ marginTop: 50 }}
         />
       ) : events.length === 0 ? (
-        <Text style={styles.noEventText}>No ongoing events.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.noEventText}>No active events found.</Text>
+        </View>
       ) : (
         <FlatList
           data={events}
           renderItem={renderEvent}
           keyExtractor={item => item._id}
-          contentContainerStyle={{ paddingTop: 20, paddingBottom: 20 }}
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+          contentContainerStyle={{ paddingBottom: 30 }}
         />
       )}
     </View>
@@ -139,34 +136,75 @@ export default ManageEvents;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#10151C' },
-  eventBox: {
-    width: width * 0.9,
-    minHeight: 130,
+  backArrow: {
+    position: 'absolute',
+    top: 45,
+    left: 15,
+    zIndex: 10,
+  },
+  arrowIcon: {
+    width: 20,
+    height: 20,
+    
+  },
+  header: {
+    padding: 20,
+    paddingTop: 30,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    marginBottom: 1,
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 36,
+    fontWeight: 'bold',
+    marginLeft: 55,
+  },
+  headerSubtitle: {
+    color: '#94A3B8',
+    fontSize: 17,
+    marginTop: 4,
+    marginLeft: 35,
+  },
+  eventCard: {
+    width: width * 0.92,
     backgroundColor: '#22232A',
-    borderRadius: 8,
+    borderRadius: 15,
     alignSelf: 'center',
+    marginTop: 15,
     padding: 15,
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+    elevation: 3,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   eventTitle: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 8,
   },
-  eventInfo: { color: '#ccc', fontSize: 14, marginBottom: 5 },
-  participantsText: { color: '#ccc', fontSize: 14, marginBottom: 10 },
-  completeButton: {
-    backgroundColor: '#3B82F6',
-    padding: 8,
-    borderRadius: 5,
-    alignItems: 'center',
+  eventInfo: { color: '#94A3B8', fontSize: 13, marginBottom: 4 },
+  badge: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3B82F6',
   },
-  completeButtonText: { color: 'white', fontWeight: 'bold' },
-  noEventText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 50,
+  badgeText: { color: '#3B82F6', fontSize: 12, fontWeight: 'bold' },
+  footerLine: {
+    marginTop: 15,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
   },
+  manageText: { color: '#64748B', fontSize: 12, fontStyle: 'italic' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  noEventText: { color: '#94A3B8', fontSize: 16 },
 });

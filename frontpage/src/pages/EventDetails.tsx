@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const EventDetails = () => {
   const navigation = useNavigation<any>();
@@ -47,6 +48,28 @@ const EventDetails = () => {
     try {
       setJoining(true);
       const token = await AsyncStorage.getItem('token');
+
+      // STEP 1: Simulate payment verification
+      const paymentRes = await fetch(
+        'http://10.0.2.2:3000/api/payment/verify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: event?.payment?.amount || 100,
+            productId: eventId,
+          }),
+        },
+      );
+
+      const paymentData = await paymentRes.json();
+
+      if (!paymentData.success) {
+        Alert.alert('Payment Failed');
+        return;
+      }
+
+      // STEP 2: Join event after payment success
       const res = await fetch(
         `http://10.0.2.2:3000/api/v1/events/${eventId}/join`,
         {
@@ -54,9 +77,14 @@ const EventDetails = () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
+
       const data = await res.json();
+
       if (data.success) {
-        Alert.alert('Success', 'You have successfully joined!');
+        Alert.alert(
+          'Payment Successful ✅',
+          `Transaction ID: ${paymentData.transactionId}`,
+        );
         setEvent(data.event);
       } else {
         Alert.alert('Error', data.error || 'Failed to join');
@@ -85,6 +113,7 @@ const EventDetails = () => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
+            
             <Image
               source={require('../assets/arrow.png')}
               style={styles.backIcon}
@@ -147,14 +176,38 @@ const EventDetails = () => {
 
           {/* Location */}
           <Text style={styles.sectionLabel}>Location</Text>
-          <View style={styles.locationCard}>
-            <Text style={styles.locationText}>
-              📍{' '}
-              {event?.location?.address ||
-                event?.location ||
-                'Location not specified'}
-            </Text>
-          </View>
+          {event?.latitude && event?.longitude ? (
+            <View style={styles.mapContainer}>
+              <MapView
+                provider={PROVIDER_GOOGLE}
+                style={styles.map}
+                initialRegion={{
+                  latitude: event.latitude,
+                  longitude: event.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: event.latitude,
+                    longitude: event.longitude,
+                  }}
+                  title={event.title}
+                  description={event.location || ''}
+                />
+              </MapView>
+            </View>
+          ) : (
+            <View style={styles.locationCard}>
+              <Text style={styles.locationText}>
+                📍{' '}
+                {event?.location?.address ||
+                  event?.location ||
+                  'Location not specified'}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -191,14 +244,16 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#22232A',
     borderRadius: 10,
+    marginTop: 40,
   },
-  backIcon: { width: 20, height: 20, },
-  headerTitle: { color: 'white', fontSize: 36, fontWeight: '700' },
-
-  imageContainer: {
-    paddingHorizontal: 20,
-    marginTop: 10,
+  backIcon: { width: 20, height: 20 },
+  headerTitle: {
+    color: 'white',
+    fontSize: 36,
+    fontWeight: '700',
+    marginTop: 30,
   },
+  imageContainer: { paddingHorizontal: 20, marginTop: 10 },
   heroImage: {
     width: '100%',
     height: 220,
@@ -213,7 +268,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   contentWrapper: { paddingHorizontal: 25, marginTop: 25 },
   eventTitle: {
     color: 'white',
@@ -221,13 +275,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 20,
   },
-
   infoSection: { marginBottom: 25 },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
+  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   iconCircle: {
     width: 40,
     height: 40,
@@ -239,7 +288,6 @@ const styles = StyleSheet.create({
   },
   smallIcon: { width: 20, height: 20 },
   infoText: { color: '#E5E7EB', fontSize: 16, fontWeight: '500' },
-
   sectionLabel: {
     color: 'white',
     fontSize: 18,
@@ -252,16 +300,23 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 25,
   },
-
   locationCard: {
     backgroundColor: '#22232A',
     padding: 15,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#374151',
+    marginBottom: 20,
   },
   locationText: { color: '#E5E7EB', fontSize: 15 },
-
+  mapContainer: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  map: { flex: 1 },
   bottomNav: {
     position: 'absolute',
     bottom: 0,

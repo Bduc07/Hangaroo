@@ -69,7 +69,7 @@ router.post("/send", async (req, res) => {
         successCount: response.successCount,
         failureCount: response.failureCount,
       });
-    }
+    }  
 
     res.json({
       success: true,

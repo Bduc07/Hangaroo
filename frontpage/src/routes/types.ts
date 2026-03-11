@@ -6,4 +6,7 @@ export type RootStackParamList = {
   CategoryResults: undefined;
   EventJoined: undefined;
   EventHosted: undefined;
+  SelectLocation: {
+    onLocationSelect: (coords: { latitude: number; longitude: number }) => void;
+  };
 };

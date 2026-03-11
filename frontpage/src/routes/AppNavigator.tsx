@@ -12,6 +12,9 @@ import Notifications from '../pages/Notifications';
 import CategoryResults from '../pages/CategoryResults';
 import EventsHosted from '../pages/EventsHosted'; // Add this
 import EventsJoined from '../pages/EventsJoined'; // Add this
+import PaymentScreen from '../pages/PaymentScreen';
+import PaymentSuccess from '../pages/PaymentSuccess';
+import SelectLocation from '../pages/SelectLocation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -55,6 +58,22 @@ const AppNavigator = () => {
           <Stack.Screen name="CategoryResults" component={CategoryResults} />
           <Stack.Screen name="EventsHosted" component={EventsHosted} />
           <Stack.Screen name="EventsJoined" component={EventsJoined} />
+          <Stack.Screen
+            name="SelectLocation"
+            component={SelectLocation}
+            options={{ title: 'Pick Location' }}
+          />
+          <Stack.Screen
+            name="PaymentScreen"
+            component={PaymentScreen}
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
+            name="PaymentSuccess"
+            component={PaymentSuccess}
+            options={{ headerShown: false }}
+          />
         </>
       )}
     </Stack.Navigator>

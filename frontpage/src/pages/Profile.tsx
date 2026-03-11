@@ -54,7 +54,11 @@ const Profile = ({ onLogout }) => {
         text: 'Yes',
         onPress: async () => {
           await AsyncStorage.removeItem('token');
-          onLogout(); // switches AppNavigator to login
+          // Reset the navigation stack and send them to your Login screen
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }], // Make sure 'Login' matches your actual route name!
+          });
         },
       },
     ]);
@@ -112,8 +116,8 @@ const styles = StyleSheet.create({
   },
   LogOutBox: {
     backgroundColor: '#616161',
-    borderColor: "#22232A",
-    borderWidth:4,
+    borderColor: '#22232A',
+    borderWidth: 4,
     height: 60,
     marginHorizontal: 50,
     borderRadius: 8,
@@ -132,7 +136,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   arrowIcon: {
-   width: 15, height: 15 ,
+    width: 15,
+    height: 15,
     marginTop: 15,
   },
 });

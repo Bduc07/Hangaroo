@@ -17,6 +17,9 @@ const eventSchema = new mongoose.Schema(
       trim: true,
     },
 
+    latitude: Number,
+    longitude: Number,
+
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
     isCompleted: { type: Boolean, default: false },
@@ -27,7 +30,6 @@ const eventSchema = new mongoose.Schema(
       enum: ["Sports", "Festivals", "Music", "Workshop", "Business", "Other"],
       default: "Other",
     },
-    
 
     participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
@@ -44,9 +46,7 @@ const eventSchema = new mongoose.Schema(
     },
   },
 
-  
   { timestamps: true },
-  
 );
 
 module.exports = mongoose.model("Event", eventSchema);

@@ -47,10 +47,7 @@ const Notifications = () => {
 
   return (
     <View style={styles.container}>
-      <Pressable
-        style={styles.backArrow}
-        onPress={() => navigation.navigate('MainApp', { screen: 'Dashboard' })}
-      >
+      <Pressable style={styles.backArrow} onPress={() => navigation.goBack()}>
         <Image
           source={require('../assets/arrow.png')}
           style={styles.arrowIcon}
@@ -101,7 +98,7 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     position: 'absolute',
-    top: 25,
+    top: 50,
     left: 15,
     zIndex: 10,
   },
@@ -115,6 +112,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 20,
+    marginTop:20,
   },
   empty: {
     color: 'white',

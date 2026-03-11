@@ -41,6 +41,10 @@ const Create = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [coordinates, setCoordinates] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const pickImage = () => {
     launchImageLibrary({ mediaType: 'photo', quality: 1 }, response => {
@@ -89,6 +93,10 @@ const Create = () => {
           type: 'image/jpeg',
           name: 'event.jpg',
         } as any);
+      }
+      if (coordinates) {
+        formData.append('latitude', coordinates.latitude.toString());
+        formData.append('longitude', coordinates.longitude.toString());
       }
 
       const response = await fetch('http://10.0.2.2:3000/api/v1/events', {
@@ -154,16 +162,24 @@ const Create = () => {
       </View>
 
       <Text style={styles.Title}>Location</Text>
-      <View style={styles.Box}>
-        <TextInput
-          placeholder="Enter location"
-          placeholderTextColor="#888"
-          value={location}
-          onChangeText={setLocation}
-          style={{ color: 'white', padding: 15, fontSize: 18 }}
-        />
-      </View>
-
+      <Pressable
+        style={styles.Box}
+        onPress={() =>
+          navigation.navigate('SelectLocation', {
+            onLocationSelect: (coords: {
+              latitude: number;
+              longitude: number;
+            }) => {
+              setCoordinates(coords); // save coordinates
+              setLocation(`Lat: ${coords.latitude}, Lng: ${coords.longitude}`); // show in text
+            },
+          })
+        }
+      >
+        <Text style={{ color: 'white', padding: 15, fontSize: 18 }}>
+          {location || 'Select location from map'}
+        </Text>
+      </Pressable>
       <Text style={styles.Title}>Description</Text>
       <View style={styles.Box}>
         <TextInput

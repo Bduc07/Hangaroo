@@ -9,4 +9,5 @@ export type RootStackParamList = {
   SelectLocation: {
     onLocationSelect: (coords: { latitude: number; longitude: number }) => void;
   };
+  Chat: undefined;
 };

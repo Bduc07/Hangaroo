@@ -8,9 +8,9 @@ import {
   ScrollView,
   ActivityIndicator,
   TextInput,
-  SafeAreaView,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -67,9 +67,10 @@ const Dashboard = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Main Content ScrollView */}
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 100 }} // Extra padding so button doesn't block the last event
         showsVerticalScrollIndicator={false}
       >
         {/* Top Row */}
@@ -196,6 +197,17 @@ const Dashboard = () => {
           ))}
         </View>
       </ScrollView>
+
+      {/* FLOATING CHAT ICON - Placed outside ScrollView to float independently */}
+      <Pressable
+        style={styles.floatingButton}
+        onPress={() => navigation.navigate('Chat')}
+      >
+        <Image
+          source={require('../assets/message.png')}
+          style={styles.chatIcon}
+        />
+      </Pressable>
     </SafeAreaView>
   );
 };
@@ -209,7 +221,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 15,
-    paddingTop: 20,
   },
 
   loading: {
@@ -222,7 +233,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop:25,
+    marginTop: 25,
   },
 
   searchBox: {
@@ -290,6 +301,20 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     marginTop: 20,
+  },
+
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    elevation: 5,
+    zIndex: 10, // Ensures it stays above all content
+  },
+
+  chatIcon: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
   },
 });
 

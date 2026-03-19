@@ -1,5 +1,6 @@
 import React,{useEffect} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/routes/AppNavigator';
 import { configureGoogleSignIn } from './src/config/googleAuth';
 
@@ -8,9 +9,11 @@ const App = () => {
      configureGoogleSignIn();
    }, []);
   return (
-    <NavigationContainer>
-      <AppNavigator />
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 };
 

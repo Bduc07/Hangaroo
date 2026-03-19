@@ -8,11 +8,12 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { Linking, Platform } from 'react-native';
 
 const EventDetails = () => {
   const navigation = useNavigation<any>();
@@ -22,16 +23,24 @@ const EventDetails = () => {
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    const fetchData = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
+
+        // Fetch User Profile
+        const userRes = await fetch('http://10.0.2.2:3000/api/v1/user/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const userData = await userRes.json();
+        if (userData.success) setUserId(userData.user._id);
+
+        // Fetch Event
         const res = await fetch(
           `http://10.0.2.2:3000/api/v1/events/${eventId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         const data = await res.json();
         if (data.success) setEvent(data.event);
@@ -41,8 +50,12 @@ const EventDetails = () => {
         setLoading(false);
       }
     };
-    fetchEvent();
+    fetchData();
   }, [eventId]);
+
+  const isAlreadyJoined = event?.participants?.some((p: any) =>
+    p._id === userId || p === userId
+  );
 
   const handleBook = async () => {
     try {
@@ -113,7 +126,6 @@ const EventDetails = () => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            
             <Image
               source={require('../assets/arrow.png')}
               style={styles.backIcon}
@@ -149,9 +161,9 @@ const EventDetails = () => {
               <Text style={styles.infoText}>
                 {event?.startTime
                   ? new Date(event.startTime).toLocaleString([], {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    })
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  })
                   : 'N/A'}
               </Text>
             </View>
@@ -177,27 +189,48 @@ const EventDetails = () => {
           {/* Location */}
           <Text style={styles.sectionLabel}>Location</Text>
           {event?.latitude && event?.longitude ? (
-            <View style={styles.mapContainer}>
-              <MapView
-                provider={PROVIDER_GOOGLE}
-                style={styles.map}
-                initialRegion={{
-                  latitude: event.latitude,
-                  longitude: event.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-              >
-                <Marker
-                  coordinate={{
+            <Pressable
+              style={styles.mapContainer}
+              onPress={() => {
+                const lat = event.latitude;
+                const lng = event.longitude;
+                const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
+                const latLng = `${lat},${lng}`;
+                const label = event.title;
+                const url = Platform.select({
+                  ios: `${scheme}${label}@${latLng}`,
+                  android: `${scheme}${latLng}(${label})`
+                });
+
+                if (url) {
+                  Linking.openURL(url).catch(() => {
+                    Alert.alert('Error', 'Could not open map app.');
+                  });
+                }
+              }}
+            >
+              <View pointerEvents="none" style={{ flex: 1 }}>
+                <MapView
+                  provider={PROVIDER_GOOGLE}
+                  style={styles.map}
+                  initialRegion={{
                     latitude: event.latitude,
                     longitude: event.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
                   }}
-                  title={event.title}
-                  description={event.location || ''}
-                />
-              </MapView>
-            </View>
+                >
+                  <Marker
+                    coordinate={{
+                      latitude: event.latitude,
+                      longitude: event.longitude,
+                    }}
+                    title={event.title}
+                    description={event.location || ''}
+                  />
+                </MapView>
+              </View>
+            </Pressable>
           ) : (
             <View style={styles.locationCard}>
               <Text style={styles.locationText}>
@@ -214,14 +247,19 @@ const EventDetails = () => {
       {/* Fixed Bottom Button */}
       <View style={styles.bottomNav}>
         <Pressable
-          style={[styles.bookButton, joining && { opacity: 0.7 }]}
+          style={[
+            styles.bookButton,
+            (joining || isAlreadyJoined) && { backgroundColor: '#4B5563' }
+          ]}
           onPress={handleBook}
-          disabled={joining}
+          disabled={joining || isAlreadyJoined}
         >
           {joining ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.bookButtonText}>Book Ticket</Text>
+            <Text style={styles.bookButtonText}>
+              {isAlreadyJoined ? 'Already Joined' : 'Book Ticket'}
+            </Text>
           )}
         </Pressable>
       </View>
@@ -238,20 +276,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+  
   },
   backButton: {
     padding: 8,
     backgroundColor: '#22232A',
     borderRadius: 10,
-    marginTop: 40,
   },
   backIcon: { width: 20, height: 20 },
   headerTitle: {
     color: 'white',
     fontSize: 36,
     fontWeight: '700',
-    marginTop: 30,
   },
   imageContainer: { paddingHorizontal: 20, marginTop: 10 },
   heroImage: {

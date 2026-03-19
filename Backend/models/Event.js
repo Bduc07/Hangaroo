@@ -30,6 +30,10 @@ const eventSchema = new mongoose.Schema(
       enum: ["Sports", "Festivals", "Music", "Workshop", "Business", "Other"],
       default: "Other",
     },
+    reminderSent: { 
+    type: Boolean, 
+    default: false 
+  },
 
     participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 

@@ -26,6 +26,7 @@ const categoryMapping: Record<string, string> = {
   Business: 'Business',
   Other: 'Other',
 };
+
 const Create = () => {
   const navigation = useNavigation<CreateNavProp>();
 
@@ -46,6 +47,9 @@ const Create = () => {
     longitude: number;
   } | null>(null);
 
+  // ✅ added loading state
+  const [loading, setLoading] = useState(false);
+
   const pickImage = () => {
     launchImageLibrary({ mediaType: 'photo', quality: 1 }, response => {
       if (response.didCancel) return;
@@ -60,12 +64,16 @@ const Create = () => {
   };
 
   const publishEvent = async () => {
+    if (loading) return; // ✅ prevent multiple clicks
+    setLoading(true);
+
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         Alert.alert('Error', 'Please login again');
         return;
       }
+
       if (!startDate || !endDate) {
         Alert.alert('Error', 'Please select start and end date & time');
         return;
@@ -81,8 +89,8 @@ const Create = () => {
       formData.append('description', description);
       formData.append('location', location);
       formData.append('maxParticipants', maxParticipants);
-      formData.append('startTime', startDate?.toISOString() || '');
-      formData.append('endTime', endDate?.toISOString() || '');
+      formData.append('startTime', startDate.toISOString());
+      formData.append('endTime', endDate.toISOString());
       formData.append('category', categoryMapping[category] || 'Other');
       formData.append('price', price);
       formData.append('paymentMethod', paymentMethod);
@@ -94,6 +102,7 @@ const Create = () => {
           name: 'event.jpg',
         } as any);
       }
+
       if (coordinates) {
         formData.append('latitude', coordinates.latitude.toString());
         formData.append('longitude', coordinates.longitude.toString());
@@ -103,7 +112,7 @@ const Create = () => {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
+          // ❌ removed Content-Type
         },
         body: formData,
       });
@@ -116,10 +125,13 @@ const Create = () => {
       }
 
       Alert.alert('Success', 'Event created successfully');
-      navigation.navigate('Dashboard'); // ✅ Jump to dashboard
+      navigation.goBack();
+
     } catch (err) {
       console.error('Publish Event Error:', err);
       Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setLoading(false); // ✅ reset loading
     }
   };
 
@@ -128,10 +140,9 @@ const Create = () => {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 40 }}
     >
-      {/* Back button */}
       <Pressable
         style={styles.backButton}
-        onPress={() => navigation.navigate('Dashboard')}
+        onPress={() => navigation.goBack()}
       >
         <Image
           source={require('../assets/arrow.png')}
@@ -149,7 +160,6 @@ const Create = () => {
         )}
       </Pressable>
 
-      {/* Inputs */}
       <Text style={styles.Title}>Event Name</Text>
       <View style={styles.Box}>
         <TextInput
@@ -161,25 +171,36 @@ const Create = () => {
         />
       </View>
 
-      <Text style={styles.Title}>Location</Text>
+      <Text style={styles.Title}>Location (Area Name)</Text>
+      <View style={styles.Box}>
+        <TextInput
+          placeholder="e.g. Kathmandu Durbar Square"
+          placeholderTextColor="#888"
+          value={location}
+          onChangeText={setLocation}
+          style={{ color: 'white', padding: 15, fontSize: 18 }}
+        />
+      </View>
+
+      <Text style={styles.Title}>Exact Map Coordinate</Text>
       <Pressable
-        style={styles.Box}
+        style={[styles.Box, coordinates && { borderColor: '#4ADE80' }]}
         onPress={() =>
           navigation.navigate('SelectLocation', {
             onLocationSelect: (coords: {
               latitude: number;
               longitude: number;
             }) => {
-              setCoordinates(coords); // save coordinates
-              setLocation(`Lat: ${coords.latitude}, Lng: ${coords.longitude}`); // show in text
+              setCoordinates(coords);
             },
           })
         }
       >
-        <Text style={{ color: 'white', padding: 15, fontSize: 18 }}>
-          {location || 'Select location from map'}
+        <Text style={{ color: coordinates ? '#4ADE80' : 'white', padding: 15, fontSize: 18 }}>
+          {coordinates ? '✅ Location Pinned on Map' : '📍 Tap to Pin on Map'}
         </Text>
       </Pressable>
+
       <Text style={styles.Title}>Description</Text>
       <View style={styles.Box}>
         <TextInput
@@ -203,13 +224,12 @@ const Create = () => {
           style={{ color: 'white', padding: 15, fontSize: 18 }}
         />
       </View>
+
       <Text style={styles.Title}>Date & Time</Text>
 
       <Pressable style={styles.Box} onPress={() => setShowStartPicker(true)}>
         <Text style={{ color: 'white', padding: 15, fontSize: 18 }}>
-          {startDate
-            ? startDate.toLocaleString()
-            : 'Starts (Select date & time)'}
+          {startDate ? startDate.toLocaleString() : 'Starts (Select date & time)'}
         </Text>
       </Pressable>
 
@@ -224,6 +244,7 @@ const Create = () => {
           }}
         />
       )}
+
       <Pressable style={styles.Box} onPress={() => setShowEndPicker(true)}>
         <Text style={{ color: 'white', padding: 15, fontSize: 18 }}>
           {endDate ? endDate.toLocaleString() : 'Ends (Select date & time)'}
@@ -286,8 +307,15 @@ const Create = () => {
         />
       </View>
 
-      <Pressable style={styles.publishButton} onPress={publishEvent}>
-        <Text style={styles.publishText}>Publish Event</Text>
+      {/* ✅ updated button */}
+      <Pressable
+        style={[styles.publishButton, loading && { opacity: 0.5 }]}
+        onPress={publishEvent}
+        disabled={loading}
+      >
+        <Text style={styles.publishText}>
+          {loading ? 'Publishing...' : 'Publish Event'}
+        </Text>
       </Pressable>
     </ScrollView>
   );
@@ -295,17 +323,16 @@ const Create = () => {
 
 export default Create;
 
-// Styles remain same as before
-
+// styles unchanged
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#10151C' },
-  backButton: { position: 'absolute', top: 35, left: 20, zIndex: 10 },
+  backButton: { position: 'absolute', top: 65, left: 20, zIndex: 10 },
   backArrow: { width: 15, height: 15 },
   EventText: {
     color: 'white',
     fontSize: 36,
     alignSelf: 'center',
-    marginTop: 20,
+    marginTop: 45,
     fontWeight: 'bold',
   },
   photo: {
@@ -342,13 +369,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   scrollableCategoryContainer: {
-    paddingLeft: 20, // Matches your margin-left
+    paddingLeft: 20,
     paddingRight: 10,
     marginTop: 15,
-    gap: 10, // Space between category items
+    gap: 10,
   },
   categorybox: {
-    paddingHorizontal: 20, // Better than fixed width for scrolling
+    paddingHorizontal: 20,
     height: 50,
     backgroundColor: '#22232A',
     borderRadius: 30,
@@ -356,7 +383,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#616161',
-    marginRight: 8, // Fallback gap for older RN versions
+    marginRight: 8,
   },
   selectedCategory: {
     backgroundColor: '#3B82F6',
@@ -364,7 +391,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     color: 'white',
-    fontSize: 14, // Slightly smaller to fit more on screen
+    fontSize: 14,
     fontWeight: '600',
   },
   publishButton: {

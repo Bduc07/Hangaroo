@@ -1,24 +1,21 @@
 import { StyleSheet, Text, View, Image, Pressable, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../routes/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 
-type EventsHostedNavProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'EventsHosted'
->;
+// Define the prop type to include onLogout
+interface ProfileProps {
+  onLogout: () => void;
+}
 
-const Profile = ({ onLogout }) => {
-  const navigation = useNavigation<EventsHostedNavProp>();
+const Profile = ({ onLogout }: ProfileProps) => {
+  const navigation = useNavigation();
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
     email?: string;
   }>({});
 
-  // Fetch logged-in user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -29,36 +26,26 @@ const Profile = ({ onLogout }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const text = await res.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (err) {
-          console.error('Server returned non-JSON:', text);
-          return;
-        }
-
+        const data = await res.json();
         if (data.user) setUser(data.user);
       } catch (err) {
-        console.error(err);
+        console.error('Profile Fetch Error:', err);
       }
     };
-
     fetchUser();
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Yes',
         onPress: async () => {
+          // 1. Clear the storage
           await AsyncStorage.removeItem('token');
-          // Reset the navigation stack and send them to your Login screen
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }], // Make sure 'Login' matches your actual route name!
-          });
+          // 2. Simply update the state in AppNavigator
+          // This causes the AppNavigator to re-render and show the Login screen automatically.
+          onLogout();
         },
       },
     ]);
@@ -100,20 +87,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 50,
   },
-  topBox: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  Profile: {
-    fontSize: 36,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  Boylogo: {
-    width: 90,
-    height: 90,
-    marginTop: 50,
-  },
+  topBox: { alignItems: 'center', marginTop: 40 },
+  Profile: { fontSize: 36, color: 'white', fontWeight: 'bold' },
+  Boylogo: { width: 90, height: 90, marginTop: 50 },
   LogOutBox: {
     backgroundColor: '#616161',
     borderColor: '#22232A',
@@ -124,20 +100,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoutText: {
-    color: 'red',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  backArrow: {
-    position: 'absolute',
-    top: 25,
-    left: 10,
-    zIndex: 10,
-  },
-  arrowIcon: {
-    width: 15,
-    height: 15,
-    marginTop: 15,
-  },
+  logoutText: { color: 'red', fontWeight: 'bold', fontSize: 18 },
+  backArrow: { position: 'absolute', top: 45, left: 15, zIndex: 10 },
+  arrowIcon: { width: 15, height: 15, marginTop: 15 },
 });

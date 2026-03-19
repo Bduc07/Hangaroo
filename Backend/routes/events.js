@@ -120,16 +120,26 @@ eventRouter.post("/", upload.single("coverPhoto"), async (req, res) => {
 eventRouter.post("/:eventId/join", async (req, res) => {
   try {
     const event = await Event.findById(req.params.eventId);
-    if (!event)
+    if (!event) {
       return res.status(404).json({ success: false, error: "Event not found" });
+    }
 
-    // Check if user already joined
+    // 1. Prevent host from joining their own event
+    if (event.host.toString() === req.userId.toString()) {
+      return res.status(400).json({
+        success: false,
+        error: "You cannot join an event you are hosting.",
+      });
+    }
+
+    // 2. Check if user already joined
     if (event.participants.some((p) => p.equals(req.userId))) {
       return res
         .status(400)
         .json({ success: false, error: "Already joined this event" });
     }
 
+    // 3. Add participant and save
     event.participants.push(req.userId);
     await event.save();
 
@@ -139,14 +149,14 @@ eventRouter.post("/:eventId/join", async (req, res) => {
     const title = "Successfully Joined! ✅";
     const body = `You are all set for ${event.title}. See you there!`;
 
-    // 1. 🔹 Save to Notification History (So it shows up in your Notifications screen)
+    // 4. Save to Notification History for the user
     await Notification.create({
       title,
       body,
-      userId: req.userId, // Make sure your Notification model has a userId field to show personal alerts
+      userId: req.userId,
     });
 
-    // 2. 🔹 Send Push Notification to the Joining User
+    // 5. Send Push Notification to the Joining User
     if (joiningUser?.fcmToken) {
       admin
         .messaging()
@@ -157,7 +167,7 @@ eventRouter.post("/:eventId/join", async (req, res) => {
         .catch((e) => console.log("Push Error:", e.message));
     }
 
-    // 3. 🔹 Notify Host (Push only)
+    // 6. Notify Host (Push only)
     if (hostUser?.fcmToken) {
       admin
         .messaging()
@@ -318,6 +328,21 @@ eventRouter.get("/category/:categoryName", async (req, res) => {
     res.json({ success: true, events });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/v1/events/:eventId/messages
+eventRouter.get("/:eventId/messages", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    // Fetch last 50 messages, sorted by newest first
+    const messages = await Message.find({ eventId })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ error: "Could not fetch messages" });
   }
 });
 

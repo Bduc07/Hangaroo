@@ -20,18 +20,18 @@ const DrawerNavigator = ({ onLogout }) => {
         headerShown: false,
         drawerPosition: 'left',
         drawerStyle: { backgroundColor: '#10151C', width: 260 },
-        drawerItemStyle: { 
-          marginVertical: 10, 
+        drawerItemStyle: {
+          marginVertical: 10,
           borderRadius: 10,
           paddingHorizontal: 10,
         },
-        drawerLabelStyle: { 
-          fontSize: 16, 
+        drawerLabelStyle: {
+          fontSize: 16,
           marginLeft: 15, // Your requested space between icon and words
-          color: 'white' 
+          color: 'white',
         },
         // This adds a subtle dark-grey highlight that blends with your background
-        drawerActiveBackgroundColor: '#1E293B', 
+        drawerActiveBackgroundColor: '#1E293B',
         drawerActiveTintColor: '#3B82F6', // Words turn blue when selected
         drawerInactiveTintColor: '#B0B0B0',
       }}
@@ -52,8 +52,6 @@ const DrawerNavigator = ({ onLogout }) => {
 
       <Drawer.Screen
         name="Profile"
-        component={Profile}
-        initialParams={{ onLogout }}
         options={{
           drawerIcon: ({ size }) => (
             <Image
@@ -63,7 +61,9 @@ const DrawerNavigator = ({ onLogout }) => {
             />
           ),
         }}
-      />
+      >
+        {props => <Profile {...props} onLogout={onLogout} />}
+      </Drawer.Screen>
 
       <Drawer.Screen
         name="Create Event"

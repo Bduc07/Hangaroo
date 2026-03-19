@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ActivityIndicator, View } from 'react-native';
 import type { RootStackParamList } from './types';
 
 // Pages
@@ -10,11 +11,13 @@ import DrawerNavigator from './DrawerNavigator';
 import EventDetails from '../pages/EventDetails';
 import Notifications from '../pages/Notifications';
 import CategoryResults from '../pages/CategoryResults';
-import EventsHosted from '../pages/EventsHosted'; // Add this
-import EventsJoined from '../pages/EventsJoined'; // Add this
+import EventsHosted from '../pages/EventsHosted';
+import EventsJoined from '../pages/EventsJoined';
 import PaymentScreen from '../pages/PaymentScreen';
 import PaymentSuccess from '../pages/PaymentSuccess';
 import SelectLocation from '../pages/SelectLocation';
+import Chat from '../pages/Chat';
+import EventChat from '../pages/EventChat';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -23,58 +26,66 @@ const AppNavigator = () => {
 
   useEffect(() => {
     const checkLogin = async () => {
-      const token = await AsyncStorage.getItem('token');
-      setIsLoggedIn(!!token);
+      try {
+        const token = await AsyncStorage.getItem('token');
+        setIsLoggedIn(!!token);
+      } catch (e) {
+        setIsLoggedIn(false);
+      }
     };
     checkLogin();
   }, []);
 
-  if (isLoggedIn === null) return null;
+  // Show a loading spinner while checking AsyncStorage to prevent "flash"
+  if (isLoggedIn === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#FF3E61" />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isLoggedIn ? (
-        <>
+        // --- AUTH STACK ---
+        <Stack.Group screenOptions={{ animation: 'fade' }}>
           <Stack.Screen name="Login">
-            {props => <Login {...props} onLogin={setIsLoggedIn} />}
+            {props => <Login {...props} onLogin={() => setIsLoggedIn(true)} />}
           </Stack.Screen>
           <Stack.Screen name="SignUp" component={SignUp} />
-        </>
+        </Stack.Group>
       ) : (
-        <>
-          {/* Main App Container (Drawer) */}
+        // --- APP STACK ---
+        <Stack.Group>
           <Stack.Screen name="MainApp">
             {props => (
               <DrawerNavigator
                 {...props}
-                onLogout={() => setIsLoggedIn(false)}
+                onLogout={async () => {
+                  await AsyncStorage.removeItem('token');
+                  setIsLoggedIn(false);
+                }}
               />
             )}
           </Stack.Screen>
 
-          {/* Sub-Screens (These will now support goBack) */}
+          {/* Sub-Screens */}
           <Stack.Screen name="EventDetails" component={EventDetails} />
           <Stack.Screen name="Notifications" component={Notifications} />
           <Stack.Screen name="CategoryResults" component={CategoryResults} />
           <Stack.Screen name="EventsHosted" component={EventsHosted} />
           <Stack.Screen name="EventsJoined" component={EventsJoined} />
+          <Stack.Screen name="Chat" component={Chat} />
+          <Stack.Screen name="EventChat" component={EventChat} />
           <Stack.Screen
             name="SelectLocation"
             component={SelectLocation}
-            options={{ title: 'Pick Location' }}
+            options={{ title: 'Pick Location', headerShown: true }}
           />
-          <Stack.Screen
-            name="PaymentScreen"
-            component={PaymentScreen}
-            options={{ headerShown: false }}
-          />
-
-          <Stack.Screen
-            name="PaymentSuccess"
-            component={PaymentSuccess}
-            options={{ headerShown: false }}
-          />
-        </>
+          <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+          <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
+        </Stack.Group>
       )}
     </Stack.Navigator>
   );

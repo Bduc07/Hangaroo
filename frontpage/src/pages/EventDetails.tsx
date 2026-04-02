@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -24,6 +26,19 @@ const EventDetails = () => {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Reporting State
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reporting, setReporting] = useState(false);
+
+  // Editing State
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editMaxParticipants, setEditMaxParticipants] = useState('');
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,7 +61,13 @@ const EventDetails = () => {
           { headers: { Authorization: `Bearer ${token}` } },
         );
         const data = await res.json();
-        if (data.success) setEvent(data.event);
+        if (data.success) {
+          setEvent(data.event);
+          setEditTitle(data.event.title || '');
+          setEditDescription(data.event.description || '');
+          setEditPrice(data.event.payment?.amount?.toString() || '');
+          setEditMaxParticipants(data.event.maxParticipants?.toString() || '50');
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -59,6 +80,44 @@ const EventDetails = () => {
   const isAlreadyJoined = event?.participants?.some(
     (p: any) => p._id === userId || p === userId,
   );
+
+  const currentParticipants = event?.participants?.length || 0;
+  const maxParticipants = event?.maxParticipants || 50;
+  const isFull = currentParticipants >= maxParticipants;
+
+  const isHost = event?.host && (event.host._id === userId || event.host === userId);
+
+  const handleDeleteEvent = () => {
+    Alert.alert(
+      "Delete Event",
+      "Are you sure you want to delete this event? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              const res = await fetch(`http://10.0.2.2:3000/api/v1/events/${eventId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              const data = await res.json();
+              if (data.success) {
+                Alert.alert("Success", "Event deleted successfully.");
+                navigation.goBack();
+              } else {
+                Alert.alert("Error", data.error || "Failed to delete event.");
+              }
+            } catch (err) {
+              Alert.alert('Error', 'Something went wrong');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const handleBook = async () => {
     try {
@@ -79,6 +138,78 @@ const EventDetails = () => {
       Alert.alert('Error', 'Something went wrong');
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handleReport = async () => {
+    if (!reportReason.trim()) {
+      Alert.alert('Error', 'Please enter a reason');
+      return;
+    }
+    setReporting(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`http://10.0.2.2:3000/api/v1/events/${eventId}/report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: reportReason })
+      });
+      const data = await res.json();
+      if (data.success) {
+        Alert.alert('Report Submitted', 'We will review this event shortly.');
+        setReportModalVisible(false);
+        setReportReason('');
+      } else {
+        Alert.alert('Error', data.error || 'Could not submit report');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setReporting(false);
+    }
+  };
+
+  const handleEditEvent = async () => {
+    if (!editTitle.trim() || !editDescription.trim() || !editPrice.trim()) {
+      Alert.alert('Error', 'Please fill out all fields');
+      return;
+    }
+    setEditing(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const payload = {
+        title: editTitle,
+        description: editDescription,
+        maxParticipants: parseInt(editMaxParticipants) || 50,
+        payment: {
+          method: event.payment?.method || 'Bank Transfer',
+          amount: Number(editPrice)
+        }
+      };
+
+      const res = await fetch(`http://10.0.2.2:3000/api/v1/events/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data.success) {
+        Alert.alert('Success', 'Event updated successfully');
+        setEvent(data.event);
+        setEditModalVisible(false);
+      } else {
+        Alert.alert('Error', data.error || 'Failed to update event');
+      }
+    } catch(err) {
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setEditing(false);
     }
   };
 
@@ -105,7 +236,9 @@ const EventDetails = () => {
             />
           </Pressable>
           <Text style={styles.headerTitle}>Details</Text>
-          <View style={{ width: 40 }} />
+          <Pressable onPress={() => setReportModalVisible(true)} style={styles.reportButton}>
+            <Text style={styles.reportText}>🚩</Text>
+          </Pressable>
         </View>
 
         {/* Hero Image */}
@@ -151,6 +284,15 @@ const EventDetails = () => {
               <Text style={styles.infoText}>
                 Rs. {event?.payment?.amount ?? 0} •{' '}
                 {event?.payment?.method ?? 'Cash'}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <View style={styles.iconCircle}>
+                <Text style={{fontSize: 20}}>👥</Text>
+              </View>
+              <Text style={styles.infoText}>
+                {currentParticipants}/{maxParticipants} Joined
               </Text>
             </View>
           </View>
@@ -222,23 +364,112 @@ const EventDetails = () => {
 
       {/* Fixed Bottom Button */}
       <View style={styles.bottomNav}>
-        <Pressable
-          style={[
-            styles.bookButton,
-            (joining || isAlreadyJoined) && { backgroundColor: '#4B5563' },
-          ]}
-          onPress={handleBook}
-          disabled={joining || isAlreadyJoined}
-        >
-          {joining ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.bookButtonText}>
-              {isAlreadyJoined ? 'Already Joined' : 'Book Ticket'}
-            </Text>
-          )}
-        </Pressable>
+        {isHost ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Pressable style={[styles.bookButton, { flex: 1, marginRight: 10, backgroundColor: '#4B5563' }]} onPress={() => setEditModalVisible(true)}>
+              <Text style={styles.bookButtonText}>Edit</Text>
+            </Pressable>
+            <Pressable style={[styles.bookButton, { flex: 1, marginLeft: 10, backgroundColor: '#ef4444' }]} onPress={handleDeleteEvent}>
+              <Text style={styles.bookButtonText}>Delete</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            style={[
+              styles.bookButton,
+              (joining || isAlreadyJoined || isFull) && { backgroundColor: '#4B5563' },
+            ]}
+            onPress={handleBook}
+            disabled={joining || isAlreadyJoined || isFull}
+          >
+            {joining ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.bookButtonText}>
+                {isAlreadyJoined ? 'Already Joined' : isFull ? 'Event Full/Closed' : 'Book Ticket'}
+              </Text>
+            )}
+          </Pressable>
+        )}
       </View>
+
+      {/* Report Modal */}
+      <Modal visible={reportModalVisible} transparent={true} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Report Event</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Why are you reporting this event?"
+              placeholderTextColor="#9ca3af"
+              multiline
+              value={reportReason}
+              onChangeText={setReportReason}
+            />
+            <View style={styles.modalActions}>
+              <Pressable style={styles.modalCancel} onPress={() => setReportModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable style={styles.modalSubmit} onPress={handleReport} disabled={reporting}>
+                {reporting ? <ActivityIndicator color="white" /> : <Text style={styles.modalSubmitText}>Submit</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal visible={editModalVisible} transparent={true} animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Edit Event</Text>
+            
+            <TextInput
+              style={styles.modalSingleInput}
+              placeholder="Event Title"
+              placeholderTextColor="#9ca3af"
+              value={editTitle}
+              onChangeText={setEditTitle}
+            />
+            
+            <TextInput
+              style={styles.modalSingleInput}
+              placeholder="Price (Rs.)"
+              placeholderTextColor="#9ca3af"
+              keyboardType="numeric"
+              value={editPrice}
+              onChangeText={setEditPrice}
+            />
+
+            <TextInput
+              style={styles.modalSingleInput}
+              placeholder="Max Participants"
+              placeholderTextColor="#9ca3af"
+              keyboardType="numeric"
+              value={editMaxParticipants}
+              onChangeText={setEditMaxParticipants}
+            />
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Event Description"
+              placeholderTextColor="#9ca3af"
+              multiline
+              value={editDescription}
+              onChangeText={setEditDescription}
+            />
+
+            <View style={styles.modalActions}>
+              <Pressable style={styles.modalCancel} onPress={() => setEditModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable style={[styles.modalSubmit, { backgroundColor: '#2563EB' }]} onPress={handleEditEvent} disabled={editing}>
+                {editing ? <ActivityIndicator color="white" /> : <Text style={styles.modalSubmitText}>Save</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -350,6 +581,18 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   bookButtonText: { color: 'white', fontSize: 18, fontWeight: '700' },
+  reportButton: { padding: 8, backgroundColor: '#22232A', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  reportText: { fontSize: 16 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalBox: { width: '100%', backgroundColor: '#22232A', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#374151' },
+  modalTitle: { color: 'white', fontSize: 20, fontWeight: '700', marginBottom: 15 },
+  modalSingleInput: { width: '100%', height: 50, backgroundColor: '#10151C', borderRadius: 12, padding: 15, color: 'white', borderWidth: 1, borderColor: '#374151', marginBottom: 15 },
+  modalInput: { width: '100%', height: 100, backgroundColor: '#10151C', borderRadius: 12, padding: 15, color: 'white', textAlignVertical: 'top', borderWidth: 1, borderColor: '#374151', marginBottom: 20 },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
+  modalCancel: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+  modalCancelText: { color: '#9CA3AF', fontSize: 16, fontWeight: '600' },
+  modalSubmit: { backgroundColor: '#ef4444', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, minWidth: 80, alignItems: 'center' },
+  modalSubmitText: { color: 'white', fontSize: 16, fontWeight: '700' },
 });
 
 export default EventDetails;

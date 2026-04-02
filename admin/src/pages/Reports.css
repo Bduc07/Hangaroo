@@ -1,0 +1,108 @@
+.reports-container {
+  padding: 40px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.reports-header {
+  margin-bottom: 40px;
+}
+
+.reports-header h2 {
+  font-size: 32px;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.back-btn {
+  background-color: #22232A;
+  color: #fff;
+  border: 1px solid #616161;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background-color: #2563EB;
+  border-color: #2563EB;
+}
+
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.report-card {
+  background-color: #22232A;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #374151;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.report-card:hover {
+  transform: translateY(-2px);
+  border-color: #ef4444;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.report-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.report-event-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.report-date {
+  font-size: 14px;
+  color: #9CA3AF;
+}
+
+.report-reason {
+  font-size: 16px;
+  color: #D1D5DB;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+  padding-left: 16px;
+  border-left: 4px solid #ef4444;
+}
+
+.report-card-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.report-user {
+  font-size: 14px;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+.no-reports {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  color: #616161;
+}
+
+.no-reports p {
+  margin-top: 16px;
+  font-size: 18px;
+  font-weight: 500;
+}

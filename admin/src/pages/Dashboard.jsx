@@ -47,9 +47,20 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <header className="dashboard-header">
         <h2>Admin Dashboard</h2>
-        <button onClick={handleLogout} className="logout-btn">
-          <LogOut size={18} /> Logout
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button onClick={() => navigate('/admin-users')} className="logout-btn" style={{ borderColor: '#10B981', color: '#FFF' }}>
+            Users
+          </button>
+          <button onClick={() => navigate('/admin-events')} className="logout-btn" style={{ borderColor: '#F59E0B', color: '#FFF' }}>
+            Events
+          </button>
+          <button onClick={() => navigate('/reports')} className="logout-btn" style={{ borderColor: '#2563EB', color: '#FFF' }}>
+            Reports
+          </button>
+          <button onClick={handleLogout} className="logout-btn">
+            <LogOut size={18} /> Logout
+          </button>
+        </div>
       </header>
       
       <div className="metrics-grid">

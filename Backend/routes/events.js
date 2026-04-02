@@ -399,4 +399,74 @@ eventRouter.get("/:eventId/messages", async (req, res) => {
 eventRouter.post("/generate-signature", generateSignature);
 eventRouter.post("/verify-payment", verifyPayment);
 
+const Report = require("../models/Report");
+
+// ======================
+// REPORT AN EVENT
+// ======================
+eventRouter.post("/:eventId/report", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({ success: false, error: "Reason is required" });
+    }
+
+    const report = await Report.create({
+      userId: req.userId,
+      eventId: eventId,
+      reason: reason
+    });
+
+    res.status(201).json({ success: true, message: "Report submitted successfully", report });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ======================
+// EDIT AN EVENT (HOST ONLY)
+// ======================
+eventRouter.put("/:eventId", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const updates = req.body; // allow partial updates
+
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ success: false, error: "Event not found" });
+
+    if (event.host.toString() !== req.userId) {
+      return res.status(403).json({ success: false, error: "Only the host can edit this event" });
+    }
+
+    Object.assign(event, updates);
+    await event.save();
+    res.json({ success: true, message: "Event updated", event });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ======================
+// DELETE AN EVENT (HOST ONLY)
+// ======================
+eventRouter.delete("/:eventId", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ success: false, error: "Event not found" });
+
+    if (event.host.toString() !== req.userId) {
+      return res.status(403).json({ success: false, error: "Only the host can delete this event" });
+    }
+
+    await Event.findByIdAndDelete(eventId);
+    res.json({ success: true, message: "Event deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = eventRouter;

@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Signup from './pages/Signup';
+import Reports from './pages/Reports';
+import Users from './pages/Users';
+import ManageEvents from './pages/ManageEvents';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('adminToken');
@@ -21,6 +24,30 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/reports" 
+          element={
+            <ProtectedRoute>
+              <Reports />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin-users" 
+          element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin-events" 
+          element={
+            <ProtectedRoute>
+              <ManageEvents />
             </ProtectedRoute>
           } 
         />

@@ -2,7 +2,7 @@ const { Router } = require("express");
 const adminRouter = Router();
 const { Admin: adminModel, User } = require("../db");
 const Event = require("../models/Event");
-// Change this line in routes/admin.js
+const Report = require("../models/Report");
 const { adminMiddleware } = require("../middleware/adminMiddleware");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -57,6 +57,60 @@ adminRouter.get("/dashboard", adminMiddleware, async function (req, res) {
     res.json({ totalUsers, totalEvents });
   } catch (err) {
     res.status(500).json({ message: "Dashboard error", error: err.message });
+  }
+});
+
+// ADMIN REPORTS (GET all reports)
+adminRouter.get("/reports", adminMiddleware, async function (req, res) {
+  try {
+    // Populate the user email and event title so frontend can display it easily
+    const reports = await Report.find()
+      .populate('userId', 'email firstName lastName')
+      .populate('eventId', 'title')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, reports });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error fetching reports", error: err.message });
+  }
+});
+
+// ADMIN USERS
+adminRouter.get("/users", adminMiddleware, async function (req, res) {
+  try {
+    const users = await User.find().select("-password").sort({ _id: -1 });
+    res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+adminRouter.delete("/users/:userId", adminMiddleware, async function (req, res) {
+  try {
+    await Event.deleteMany({ host: req.params.userId });
+    await User.findByIdAndDelete(req.params.userId);
+    res.json({ success: true, message: "User and associated events deleted" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ADMIN EVENTS
+adminRouter.get("/events", adminMiddleware, async function (req, res) {
+  try {
+    const events = await Event.find().populate('host', 'email firstName').sort({ _id: -1 });
+    res.json({ success: true, events });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+adminRouter.delete("/events/:eventId", adminMiddleware, async function (req, res) {
+  try {
+    await Event.findByIdAndDelete(req.params.eventId);
+    res.json({ success: true, message: "Event permanently deleted" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

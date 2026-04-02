@@ -34,6 +34,12 @@ exports.placeOrder = async (req, res) => {
         .json({ success: false, message: "Already joined this event" });
     }
 
+    // 2.5️⃣ Check Capacity Limits
+    const maxCapacity = event.maxParticipants || 50;
+    if (event.participants.length >= maxCapacity) {
+      return res.status(400).json({ success: false, message: "Event is already full" });
+    }
+
     // 3️⃣ Add user to participants
     event.participants.push(req.userId);
     event.payment = {
@@ -206,7 +212,15 @@ exports.verifyPayment = async (req, res) => {
       status: "Paid",
     };
 
-    // Add participant
+    // Add participant with capacity check
+    const maxCapacity = event.maxParticipants || 50;
+    if (event.participants.length >= maxCapacity && !event.participants.some((p) => p.equals(req.userId))) {
+      return res.status(400).json({
+        success: false,
+        message: "Event is completely full. Cannot process payment enrollment.",
+      });
+    }
+
     if (!event.participants.some((p) => p.equals(req.userId))) {
       event.participants.push(req.userId);
     }

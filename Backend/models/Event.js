@@ -43,10 +43,12 @@ const eventSchema = new mongoose.Schema(
     payment: {
       method: {
         type: String,
-        enum: ["Bank Transfer", "Cash"],
+        enum: ["Bank Transfer", "Cash", "eSewa"],
         default: "Bank Transfer",
       },
       amount: { type: Number, default: 0 },
+      transactionUuid: { type: String },
+      status: { type: String },
     },
   },
 

@@ -9,7 +9,7 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../routes/types';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -29,6 +29,7 @@ const categoryMapping: Record<string, string> = {
 
 const Create = () => {
   const navigation = useNavigation<CreateNavProp>();
+  const route = useRoute<any>();
 
   const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -49,6 +50,14 @@ const Create = () => {
 
   // ✅ added loading state
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (route.params?.selectedLocation) {
+      setCoordinates(route.params.selectedLocation);
+      // Optional: Clear the parameter so it doesn't get processed again
+      navigation.setParams({ selectedLocation: undefined } as any);
+    }
+  }, [route.params?.selectedLocation]);
 
   const pickImage = () => {
     launchImageLibrary({ mediaType: 'photo', quality: 1 }, response => {
@@ -185,16 +194,7 @@ const Create = () => {
       <Text style={styles.Title}>Exact Map Coordinate</Text>
       <Pressable
         style={[styles.Box, coordinates && { borderColor: '#4ADE80' }]}
-        onPress={() =>
-          navigation.navigate('SelectLocation', {
-            onLocationSelect: (coords: {
-              latitude: number;
-              longitude: number;
-            }) => {
-              setCoordinates(coords);
-            },
-          })
-        }
+        onPress={() => navigation.navigate('SelectLocation')}
       >
         <Text style={{ color: coordinates ? '#4ADE80' : 'white', padding: 15, fontSize: 18 }}>
           {coordinates ? '✅ Location Pinned on Map' : '📍 Tap to Pin on Map'}

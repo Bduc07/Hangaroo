@@ -7,6 +7,10 @@ const { User } = require("../db");
 const userMiddleware = require("../middleware/userMiddleware");
 const admin = require("firebase-admin");
 const serviceAccount = require("../serviceAccountKey.json");
+const {
+  generateSignature,
+  verifyPayment,
+} = require("../controllers/eventController");
 
 // Initialize Firebase Admin only once
 if (!admin.apps.length) {
@@ -16,7 +20,13 @@ if (!admin.apps.length) {
 }
 
 const eventRouter = express.Router();
-eventRouter.use(userMiddleware);
+eventRouter.use((req, res, next) => {
+  if (req.path === "/payment-success" || req.path === "/payment-failure") {
+    return next();
+  }
+
+  return userMiddleware(req, res, next);
+});
 
 // ------------------
 // Multer config for file uploads
@@ -301,6 +311,47 @@ eventRouter.post("/:eventId/complete", async (req, res) => {
   }
 });
 
+eventRouter.get("/payment-success", (req, res) => {
+  const encodedData = typeof req.query.data === "string" ? req.query.data : "";
+
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Payment Success</title>
+      </head>
+      <body>
+        <h1>Payment Successful</h1>
+        <p>You can return to the app.</p>
+        ${
+          encodedData
+            ? `<p id="payment-data" data-encoded="${encodedData}"></p>`
+            : ""
+        }
+      </body>
+    </html>
+  `);
+});
+
+eventRouter.get("/payment-failure", (_req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Payment Failed</title>
+      </head>
+      <body>
+        <h1>Payment Failed</h1>
+        <p>Please return to the app and try again.</p>
+      </body>
+    </html>
+  `);
+});
+
 // GET EVENT BY ID
 eventRouter.get("/:eventId", async (req, res) => {
   try {
@@ -345,5 +396,7 @@ eventRouter.get("/:eventId/messages", async (req, res) => {
     res.status(500).json({ error: "Could not fetch messages" });
   }
 });
+eventRouter.post("/generate-signature", generateSignature);
+eventRouter.post("/verify-payment", verifyPayment);
 
 module.exports = eventRouter;

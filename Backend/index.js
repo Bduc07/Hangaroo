@@ -1,11 +1,29 @@
+// index.js
+require("dotenv").config(); // load .env first
+
 const express = require("express");
 const mongoose = require("mongoose");
 const http = require("http");
+const cors = require("cors");
 const { Server } = require("socket.io");
-const chatRouter = require("./routes/chat");
 
+// Routers
+const chatRouter = require("./routes/chat");
+const userRouter = require("./routes/user");
+const adminRouter = require("./routes/admin");
+const eventRouter = require("./routes/events");
+const notificationsRouter = require("./routes/notifications");
+const googleAuthRouter = require("./routes/auth/google");
+const paymentRoutes = require("./routes/payment");
+
+// Models
+const Message = require("./models/Message"); // Ensure this file exists
+
+// Initialize Express & HTTP Server
 const app = express();
 const server = http.createServer(app);
+
+// Initialize Socket.IO
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -13,51 +31,42 @@ const io = new Server(server, {
   },
 });
 
+// Middleware
+app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
-// Models
-const Message = require("./models/Message"); // Ensure this file exists
-
-// Routers
-const userRouter = require("./routes/user");
-const adminRouter = require("./routes/admin");
-const eventRouter = require("./routes/events");
-const notificationsRouter = require("./routes/notifications");
-const googleAuthRouter = require("./routes/auth/google");
-const paymentRoutes = require("./routes/payment");
-require("./routes/scheduler");
-
-// Middleware Routes
+// API Routes
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/events", eventRouter);
-app.use("/uploads", express.static("uploads"));
 app.use("/api/v1/auth/google", googleAuthRouter);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/chat", chatRouter);
 
+// Root route
 app.get("/", (req, res) => {
   res.json({ message: "Event Management API with Real-time Chat is running!" });
 });
 
-// --- Socket.IO Real-time Logic ---
+// Socket.IO Real-time Logic
 io.on("connection", (socket) => {
   console.log(`⚡ User Connected: ${socket.id}`);
 
-  // 1️⃣ Join a specific event room
+  // Join a specific event room
   socket.on("join_event", (eventId) => {
     socket.join(`event_${eventId}`);
     console.log(`👥 User joined room: event_${eventId}`);
   });
 
-  // 1.5️⃣ Leave a specific event room
+  // Leave a specific event room
   socket.on("leave_event", (eventId) => {
     socket.leave(`event_${eventId}`);
     console.log(`👋 User left room: event_${eventId}`);
   });
 
-  // 2️⃣ Handle sending and saving messages
+  // Handle sending and saving messages
   socket.on("send_message", async (data) => {
     try {
       console.log("📩 Incoming message:", data); // DEBUG
@@ -81,7 +90,9 @@ io.on("connection", (socket) => {
       // Broadcast to everyone in the room EXCEPT the sender
       socket.to(`event_${eventId}`).emit("receive_message", savedMessage);
 
-      console.log(`💬 Message saved & sent to room event_${eventId} (excluding sender): ${text}`);
+      console.log(
+        `💬 Message saved & sent to room event_${eventId} (excluding sender): ${text}`,
+      );
     } catch (error) {
       console.error("❌ Error handling send_message:", error);
     }
@@ -92,12 +103,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// --- Database & Server Start ---
+// Connect to MongoDB & start server
 async function main() {
   try {
-    await mongoose.connect(
-      "mongodb+srv://bidusigurung9:sF0r9oMTUPEnl0cV@cluster0.x7irko4.mongodb.net/Hangaroo",
-    );
+    await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MongoDB connected");
 
     server.listen(3000, () => {
@@ -109,3 +118,6 @@ async function main() {
 }
 
 main();
+
+// Scheduler (if any scheduled jobs)
+require("./routes/scheduler");

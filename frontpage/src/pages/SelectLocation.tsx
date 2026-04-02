@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from './typ'; // your navigation types
+import type { RootStackParamList } from '../routes/types'; // your navigation types
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SelectLocation'>;
 
@@ -58,10 +58,13 @@ export default function SelectLocation({ navigation, route }: Props) {
   };
 
   const confirmLocation = () => {
-    if (route.params?.onLocationSelect) {
-      route.params.onLocationSelect(selectedMarker); // pass back to Create Event
-    }
-    navigation.goBack();
+    navigation.navigate('MainApp', {
+      screen: 'Create Event',
+      merge: true,
+      params: {
+        selectedLocation: selectedMarker,
+      },
+    });
   };
 
   return (

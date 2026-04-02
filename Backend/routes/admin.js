@@ -1,6 +1,9 @@
 const { Router } = require("express");
 const adminRouter = Router();
-const { adminModel } = require("../db");
+const { Admin: adminModel, User } = require("../db");
+const Event = require("../models/Event");
+// Change this line in routes/admin.js
+const { adminMiddleware } = require("../middleware/adminMiddleware");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { JWT_ADMIN_PASSWORD } = require("../config");
@@ -44,6 +47,17 @@ adminRouter.post("/signin", async function (req, res) {
   const token = jwt.sign({ id: admin._id }, JWT_ADMIN_PASSWORD);
 
   res.json({ token });
+});
+
+// ADMIN DASHBOARD
+adminRouter.get("/dashboard", adminMiddleware, async function (req, res) {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalEvents = await Event.countDocuments();
+    res.json({ totalUsers, totalEvents });
+  } catch (err) {
+    res.status(500).json({ message: "Dashboard error", error: err.message });
+  }
 });
 
 module.exports = adminRouter;

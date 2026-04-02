@@ -1,0 +1,150 @@
+.login-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.login-box {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-text {
+  font-size: 30px;
+  font-weight: 700;
+  margin-bottom: 32px;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.error-text {
+  color: #ef4444;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.input-box {
+  width: 100%;
+  height: 64px;
+  background-color: #22232A;
+  border: 1px solid #616161;
+  border-radius: 8px;
+  padding: 0 16px;
+  color: white;
+  font-size: 16px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+
+.input-box::placeholder {
+  color: #616161;
+}
+
+.password-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 64px;
+  background-color: #22232A;
+  border: 1px solid #616161;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+  padding-right: 16px;
+}
+
+.password-container:focus-within {
+  border-color: #2563EB;
+}
+
+.password-input {
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 16px;
+  padding: 0 16px;
+}
+
+.password-input::placeholder {
+  color: #616161;
+}
+
+.password-input:focus {
+  outline: none;
+}
+
+.eye-button {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  outline: none;
+}
+
+.forgot-password {
+  color: #FFFFFF;
+  font-size: 14px;
+  align-self: flex-end;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.forgot-password:hover {
+  color: #2563EB;
+}
+
+.login-button {
+  width: 100%;
+  height: 64px;
+  background-color: #2563EB;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 18px;
+  font-weight: 700;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.login-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.login-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #FFF;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

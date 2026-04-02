@@ -15,9 +15,11 @@ import EventsHosted from '../pages/EventsHosted';
 import EventsJoined from '../pages/EventsJoined';
 import PaymentScreen from '../pages/PaymentScreen';
 import PaymentSuccess from '../pages/PaymentSuccess';
+import PaymentFailure from '../pages/PaymentFailure';
 import SelectLocation from '../pages/SelectLocation';
 import Chat from '../pages/Chat';
 import EventChat from '../pages/EventChat';
+import EsewaPayment from '../pages/EsewaPayment';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -72,6 +74,7 @@ const AppNavigator = () => {
 
           {/* Sub-Screens */}
           <Stack.Screen name="EventDetails" component={EventDetails} />
+          <Stack.Screen name="EsewaPayment" component={EsewaPayment} />
           <Stack.Screen name="Notifications" component={Notifications} />
           <Stack.Screen name="CategoryResults" component={CategoryResults} />
           <Stack.Screen name="EventsHosted" component={EventsHosted} />
@@ -83,8 +86,9 @@ const AppNavigator = () => {
             component={SelectLocation}
             options={{ title: 'Pick Location', headerShown: true }}
           />
-          <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
           <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
+          <Stack.Screen name="PaymentFailure" component={PaymentFailure} />
+       
         </Stack.Group>
       )}
     </Stack.Navigator>

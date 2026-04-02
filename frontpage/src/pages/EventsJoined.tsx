@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 20,
+    paddingTop: 35,
   },
   headerTitle: {
     color: 'white',

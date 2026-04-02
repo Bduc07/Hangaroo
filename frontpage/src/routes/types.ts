@@ -1,13 +1,14 @@
 export type RootStackParamList = {
   Login: undefined;
   SignUp: undefined;
-  MainApp: undefined; // Drawer
+  MainApp: { screen: string; params?: any; merge?: boolean } | undefined; // Drawer
   EventDetails: { eventId: string } | undefined;
   CategoryResults: undefined;
   EventJoined: undefined;
   EventHosted: undefined;
-  SelectLocation: {
-    onLocationSelect: (coords: { latitude: number; longitude: number }) => void;
-  };
+  SelectLocation: undefined;
   Chat: undefined;
+  EsewaPayment: { amount: number; eventId: string; transaction_uuid: string };
+  PaymentSuccess: { amount: number; transactionId: string };
+  PaymentFailure: undefined;
 };

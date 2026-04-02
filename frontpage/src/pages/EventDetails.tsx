@@ -31,9 +31,12 @@ const EventDetails = () => {
         const token = await AsyncStorage.getItem('token');
 
         // Fetch User Profile
-        const userRes = await fetch('http://10.0.2.2:3000/api/v1/user/profile', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const userRes = await fetch(
+          'http://10.0.2.2:3000/api/v1/user/profile',
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
         const userData = await userRes.json();
         if (userData.success) setUserId(userData.user._id);
 
@@ -53,55 +56,25 @@ const EventDetails = () => {
     fetchData();
   }, [eventId]);
 
-  const isAlreadyJoined = event?.participants?.some((p: any) =>
-    p._id === userId || p === userId
+  const isAlreadyJoined = event?.participants?.some(
+    (p: any) => p._id === userId || p === userId,
   );
 
   const handleBook = async () => {
     try {
       setJoining(true);
-      const token = await AsyncStorage.getItem('token');
 
-      // STEP 1: Simulate payment verification
-      const paymentRes = await fetch(
-        'http://10.0.2.2:3000/api/payment/verify',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: event?.payment?.amount || 100,
-            productId: eventId,
-          }),
-        },
-      );
+      // Generate unique transaction ID
+      const transaction_uuid = `EVT${Date.now()}-${Math.floor(
+        Math.random() * 1000,
+      )}`;
 
-      const paymentData = await paymentRes.json();
-
-      if (!paymentData.success) {
-        Alert.alert('Payment Failed');
-        return;
-      }
-
-      // STEP 2: Join event after payment success
-      const res = await fetch(
-        `http://10.0.2.2:3000/api/v1/events/${eventId}/join`,
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      const data = await res.json();
-
-      if (data.success) {
-        Alert.alert(
-          'Payment Successful ✅',
-          `Transaction ID: ${paymentData.transactionId}`,
-        );
-        setEvent(data.event);
-      } else {
-        Alert.alert('Error', data.error || 'Failed to join');
-      }
+      // Navigate to eSewaPayment screen
+      navigation.navigate('EsewaPayment', {
+        amount: event?.payment?.amount || 100,
+        eventId,
+        transaction_uuid,
+      });
     } catch (err) {
       Alert.alert('Error', 'Something went wrong');
     } finally {
@@ -161,9 +134,9 @@ const EventDetails = () => {
               <Text style={styles.infoText}>
                 {event?.startTime
                   ? new Date(event.startTime).toLocaleString([], {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })
                   : 'N/A'}
               </Text>
             </View>
@@ -194,12 +167,15 @@ const EventDetails = () => {
               onPress={() => {
                 const lat = event.latitude;
                 const lng = event.longitude;
-                const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
+                const scheme = Platform.select({
+                  ios: 'maps:0,0?q=',
+                  android: 'geo:0,0?q=',
+                });
                 const latLng = `${lat},${lng}`;
                 const label = event.title;
                 const url = Platform.select({
                   ios: `${scheme}${label}@${latLng}`,
-                  android: `${scheme}${latLng}(${label})`
+                  android: `${scheme}${latLng}(${label})`,
                 });
 
                 if (url) {
@@ -249,7 +225,7 @@ const EventDetails = () => {
         <Pressable
           style={[
             styles.bookButton,
-            (joining || isAlreadyJoined) && { backgroundColor: '#4B5563' }
+            (joining || isAlreadyJoined) && { backgroundColor: '#4B5563' },
           ]}
           onPress={handleBook}
           disabled={joining || isAlreadyJoined}
@@ -276,7 +252,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-  
   },
   backButton: {
     padding: 8,

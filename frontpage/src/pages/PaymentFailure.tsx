@@ -1,40 +1,24 @@
 import React from 'react';
 import { Text, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RootStackParamList } from '../routes/types';
 
-type PaymentSuccessRouteProp = RouteProp<RootStackParamList, 'PaymentSuccess'>;
-
-const PaymentSuccess = () => {
-  const route = useRoute<PaymentSuccessRouteProp>();
+const PaymentFailure = () => {
   const navigation = useNavigation<any>();
-  const { amount, transactionId } = route.params;
 
-  return (
+   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.card}>
-          <View style={[styles.statusIcon, styles.successIcon]}>
-            <Text style={[styles.statusIconText, styles.successIconText]}>OK</Text>
+          <View style={[styles.statusIcon, styles.failureIcon]}>
+            <Text style={[styles.statusIconText, styles.failureIconText]}>!</Text>
           </View>
 
-          <Text style={styles.title}>Payment Successful</Text>
+          <Text style={styles.title}>Payment Failed</Text>
           <Text style={styles.message}>
-            Your payment has been completed successfully.
+            Unfortunately, your payment could not be processed at this time.
+            Please try again or use a different payment method.
           </Text>
-
-          <View style={styles.detailsContainer}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Amount</Text>
-              <Text style={styles.detailValue}>Rs. {amount}</Text>
-            </View>
-            <View style={styles.separator} />
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Transaction ID</Text>
-              <Text style={styles.detailValue}>{transactionId}</Text>
-            </View>
-          </View>
 
           <TouchableOpacity
             activeOpacity={0.85}
@@ -83,20 +67,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 18,
   },
-  successIcon: {
-    backgroundColor: '#e9f9ef',
+  failureIcon: {
+    backgroundColor: '#ffefed',
   },
   statusIconText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
   },
-  successIconText: {
-    color: '#1f9d55',
+  failureIconText: {
+    color: '#e53935',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1f9d55',
+    color: '#e53935',
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -106,35 +90,6 @@ const styles = StyleSheet.create({
     color: '#5f6c7b',
     textAlign: 'center',
     marginBottom: 24,
-  },
-  detailsContainer: {
-    width: '100%',
-    backgroundColor: '#f8fafc',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#e6edf5',
-  },
-  detailRow: {
-    gap: 6,
-  },
-  detailLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#7b8794',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  detailValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2933',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#e6edf5',
-    marginVertical: 14,
   },
   button: {
     width: '100%',
@@ -150,4 +105,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PaymentSuccess;
+export default PaymentFailure;

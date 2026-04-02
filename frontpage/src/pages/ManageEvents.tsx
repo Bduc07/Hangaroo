@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#10151C' },
   backArrow: {
     position: 'absolute',
-    top: 45,
-    left: 15,
+    top: 55,
+    left: 25,
     zIndex: 10,
   },
   arrowIcon: {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 30,
+    paddingTop: 40,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     marginBottom: 1,

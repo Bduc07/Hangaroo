@@ -42,8 +42,23 @@ const Chat = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      // Fetch active (ongoing) events where user is the host
+      const hostingOngoingRes = await axios.get('http://10.0.2.2:3000/api/v1/events/ongoing', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Fetch completed events where user is the host
+      const hostingCompletedRes = await axios.get('http://10.0.2.2:3000/api/v1/events/hosted', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       // Combine both lists
-      const allEvents = [...activeRes.data.events, ...completedRes.data.events];
+      const allEvents = [
+        ...activeRes.data.events, 
+        ...completedRes.data.events,
+        ...hostingOngoingRes.data.events,
+        ...hostingCompletedRes.data.events
+      ];
 
       // Remove duplicates just in case
       const uniqueEvents = Array.from(new Map(allEvents.map(item => [item._id, item])).values());
@@ -110,7 +125,7 @@ const Chat = () => {
           <Text style={styles.emptyTitle}>No Conversations Yet</Text>
 
           <Text style={styles.emptySubtitle}>
-            Events you join will appear here so you can chat with the group.
+            Events you host or join will appear here so you can chat with the group.
           </Text>
         </View>
       ) : (
@@ -142,6 +157,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderBottomWidth: 1,
     borderBottomColor: '#1A222D',
+    marginTop:-50,
   },
 
   backButton: {

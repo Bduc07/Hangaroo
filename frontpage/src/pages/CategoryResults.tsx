@@ -86,6 +86,9 @@ const CategoryResults = () => {
                 ? item.location.address
                 : item.location}
             </Text>
+            <Text style={[styles.info, { marginTop: 4, color: '#4ADE80' }]} numberOfLines={1}>
+              Hosted by: {item.host?.firstName} {item.host?.lastName}
+            </Text>
           </View>
           <Text style={styles.priceTag}>
             {item.payment?.amount > 0 ? `Rs. ${item.payment.amount}` : 'FREE'}

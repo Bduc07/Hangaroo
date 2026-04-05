@@ -5,6 +5,7 @@ const reportSchema = new mongoose.Schema({
   eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
   reason: { type: String, required: true },
   status: { type: String, enum: ['pending', 'reviewed'], default: 'pending' },
+  severity: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
   createdAt: { type: Date, default: Date.now }
 });
 

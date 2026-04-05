@@ -295,6 +295,15 @@ const EventDetails = () => {
                 {currentParticipants}/{maxParticipants} Joined
               </Text>
             </View>
+
+            <View style={styles.infoRow}>
+              <View style={styles.iconCircle}>
+                <Text style={{fontSize: 20}}>👤</Text>
+              </View>
+              <Text style={styles.infoText}>
+                Hosted by: {event?.host?.firstName} {event?.host?.lastName}
+              </Text>
+            </View>
           </View>
 
           {/* Description */}
@@ -309,15 +318,9 @@ const EventDetails = () => {
               onPress={() => {
                 const lat = event.latitude;
                 const lng = event.longitude;
-                const scheme = Platform.select({
-                  ios: 'maps:0,0?q=',
-                  android: 'geo:0,0?q=',
-                });
-                const latLng = `${lat},${lng}`;
-                const label = event.title;
                 const url = Platform.select({
-                  ios: `${scheme}${label}@${latLng}`,
-                  android: `${scheme}${latLng}(${label})`,
+                  ios: `maps://app?daddr=${lat},${lng}`,
+                  android: `google.navigation:q=${lat},${lng}`,
                 });
 
                 if (url) {

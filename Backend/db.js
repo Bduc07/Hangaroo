@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   lastName: String,
   fcmToken: { type: String },
   points: { type: Number, default: 0 },
+  isBannedFromHosting: { type: Boolean, default: false },
 });
 
 const adminSchema = new mongoose.Schema({

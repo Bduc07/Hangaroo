@@ -54,10 +54,13 @@ const Create = () => {
   React.useEffect(() => {
     if (route.params?.selectedLocation) {
       setCoordinates(route.params.selectedLocation);
+      if (route.params.locationName) {
+         setLocation(route.params.locationName);
+      }
       // Optional: Clear the parameter so it doesn't get processed again
-      navigation.setParams({ selectedLocation: undefined } as any);
+      navigation.setParams({ selectedLocation: undefined, locationName: undefined } as any);
     }
-  }, [route.params?.selectedLocation]);
+  }, [route.params?.selectedLocation, route.params?.locationName]);
 
   const pickImage = () => {
     launchImageLibrary({ mediaType: 'photo', quality: 1 }, response => {

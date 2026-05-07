@@ -96,6 +96,12 @@ const Create = () => {
         return;
       }
 
+      const parsedPrice = parseFloat(price);
+      if (isNaN(parsedPrice) || parsedPrice < 0) {
+        Alert.alert('Error', 'Invalid money');
+        return;
+      }
+
       const formData = new FormData();
       formData.append('title', title);
       formData.append('description', description);
@@ -172,7 +178,7 @@ const Create = () => {
         )}
       </Pressable>
 
-      <Text style={styles.Title}>Event Name</Text>
+      <Text style={styles.Title}>Event Name<Text style={{ color: 'red' }}> *</Text></Text>
       <View style={styles.Box}>
         <TextInput
           placeholder="Enter event name"
@@ -183,7 +189,7 @@ const Create = () => {
         />
       </View>
 
-      <Text style={styles.Title}>Location (Area Name)</Text>
+      <Text style={styles.Title}>Location (Area Name)<Text style={{ color: 'red' }}> *</Text></Text>
       <View style={styles.Box}>
         <TextInput
           placeholder="e.g. Kathmandu Durbar Square"
@@ -194,7 +200,7 @@ const Create = () => {
         />
       </View>
 
-      <Text style={styles.Title}>Exact Map Coordinate</Text>
+      <Text style={styles.Title}>Exact Map Coordinate<Text style={{ color: 'red' }}> *</Text></Text>
       <Pressable
         style={[styles.Box, coordinates && { borderColor: '#4ADE80' }]}
         onPress={() => navigation.navigate('SelectLocation')}
@@ -204,7 +210,7 @@ const Create = () => {
         </Text>
       </Pressable>
 
-      <Text style={styles.Title}>Description</Text>
+      <Text style={styles.Title}>Description<Text style={{ color: 'red' }}> *</Text></Text>
       <View style={styles.Box}>
         <TextInput
           placeholder="Enter description"
@@ -216,7 +222,7 @@ const Create = () => {
         />
       </View>
 
-      <Text style={styles.Title}>Maximum Participants</Text>
+      <Text style={styles.Title}>Maximum Participants<Text style={{ color: 'red' }}> *</Text></Text>
       <View style={styles.Box}>
         <TextInput
           placeholder="Enter max participants"
@@ -228,7 +234,7 @@ const Create = () => {
         />
       </View>
 
-      <Text style={styles.Title}>Date & Time</Text>
+      <Text style={styles.Title}>Date & Time<Text style={{ color: 'red' }}> *</Text></Text>
 
       <Pressable style={styles.Box} onPress={() => setShowStartPicker(true)}>
         <Text style={{ color: 'white', padding: 15, fontSize: 18 }}>
@@ -266,7 +272,7 @@ const Create = () => {
         />
       )}
 
-      <Text style={styles.Title}>Category</Text>
+      <Text style={styles.Title}>Category<Text style={{ color: 'red' }}> *</Text></Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -288,7 +294,7 @@ const Create = () => {
         )}
       </ScrollView>
 
-      <Text style={styles.Title}>Payment</Text>
+      <Text style={styles.Title}>Payment<Text style={{ color: 'red' }}> *</Text></Text>
       <View style={styles.Box}>
         <TextInput
           placeholder="Amount"

@@ -13,6 +13,19 @@ import {
 import { useNavigation } from '../routes/navigation';
 import axios from 'axios';
 
+const getPasswordStrength = (pass: string) => {
+  if (!pass) return null;
+  let score = 0;
+  if (/[A-Z]/.test(pass)) score += 1;
+  if (/\d/.test(pass)) score += 1;
+  if (/[!@#$%^&*(),.?":{}|<>\-_]/.test(pass)) score += 1;
+  if (pass.length >= 8) score += 1;
+
+  if (score <= 1) return { label: 'Weak', color: '#EF4444' };
+  if (score === 2 || score === 3) return { label: 'Medium', color: '#F59E0B' };
+  return { label: 'Strong', color: '#10B981' };
+};
+
 const SignUp = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
@@ -32,6 +45,14 @@ const SignUp = () => {
       return;
     }
 
+    if (!/[A-Z]/.test(trimmedPassword) || !/\d/.test(trimmedPassword) || !/[!@#$%^&*(),.?":{}|<>\-_]/.test(trimmedPassword) || trimmedPassword.length < 8) {
+      Alert.alert(
+        'Weak Password',
+        'Password must be at least 8 characters long, and contain at least one capital letter, one number, and one special character.'
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await axios.post(
@@ -48,7 +69,7 @@ const SignUp = () => {
       Alert.alert('Success', 'Account created successfully!', [
         { text: 'OK', onPress: () => navigation.navigate('Login') },
       ]);
-    } catch (err) {
+    } catch (err: any) {
       console.log(err.response?.data || err.message);
       Alert.alert('Error', 'Signup failed. Please try again.');
     } finally {
@@ -79,7 +100,7 @@ const SignUp = () => {
       </View>
 
       <Text style={styles.label}>Password</Text>
-      <View style={styles.inputBox}>
+      <View style={[styles.inputBox, password.length > 0 && { marginBottom: 4 }]}>
         <TextInput
           placeholder="Enter password"
           placeholderTextColor="#616161"
@@ -90,6 +111,11 @@ const SignUp = () => {
         />
         <Image source={require('../assets/Eyes.png')} style={styles.icon} />
       </View>
+      {password.length > 0 && (
+        <Text style={{ color: getPasswordStrength(password)?.color, marginBottom: 12, fontSize: 13, fontWeight: '600', marginLeft: 4 }}>
+          Password Strength: {getPasswordStrength(password)?.label}
+        </Text>
+      )}
 
       <Text style={styles.label}>First Name</Text>
       <TextInput

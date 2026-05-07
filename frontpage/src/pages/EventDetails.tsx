@@ -177,6 +177,12 @@ const EventDetails = () => {
       Alert.alert('Error', 'Please fill out all fields');
       return;
     }
+
+    const parsedEditPrice = parseFloat(editPrice);
+    if (isNaN(parsedEditPrice) || parsedEditPrice < 0) {
+      Alert.alert('Error', 'Invalid money');
+      return;
+    }
     setEditing(true);
     try {
       const token = await AsyncStorage.getItem('token');
